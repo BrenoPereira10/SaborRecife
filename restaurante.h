@@ -5,7 +5,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Estado atual do cliente
+
+// ======================================================
+// ENUMS
+// ======================================================
+
+// Estado do cliente
 typedef enum{
 
     ESPERANDO,
@@ -13,6 +18,7 @@ typedef enum{
     FOI_EMBORA
 
 }EstadoCliente;
+
 
 // Status da mesa
 typedef enum{
@@ -23,6 +29,8 @@ typedef enum{
 
 }StatusMesa;
 
+
+// Tipo da posição do mapa
 typedef enum{
 
     COZINHA,
@@ -34,11 +42,7 @@ typedef enum{
 
 // ======================================================
 // STRUCT PRATO
-// Representa uma comida do jogo.
-// Ex:
-// - Tapioca
-// - Bolo de Rolo
-// - Cuscuz
+// ======================================================
 
 typedef struct{
 
@@ -46,8 +50,11 @@ typedef struct{
 
 }Prato;
 
+
+
+// ======================================================
 // STRUCT CLIENTE
-// Representa um cliente sentado em uma mesa.
+// ======================================================
 
 typedef struct{
 
@@ -63,10 +70,8 @@ typedef struct{
 
 // ======================================================
 // STRUCT MESA
-// Cada mesa possui:
-// - número identificador
-// - status atual
-// - ponteiro para cliente
+// ======================================================
+
 typedef struct{
 
     int numero;
@@ -80,8 +85,10 @@ typedef struct{
 
 
 // ======================================================
-// STRUCT FILA DA COZINHA
-// Fila simples para armazenar pratos prontos.
+// STRUCT FILA
+// ======================================================
+
+// nó da fila
 typedef struct NoFila{
 
     Prato prato;
@@ -91,8 +98,7 @@ typedef struct NoFila{
 }NoFila;
 
 
-
-// estrutura principal da fila
+// fila principal
 typedef struct{
 
     NoFila *inicio;
@@ -101,28 +107,30 @@ typedef struct{
 
 }FilaCozinha;
 
+
+
 // ======================================================
-// STRUCT DO NÓ DA LISTA
-// Cada nó representa uma posição física do restaurante.
-// Exemplo:
-// [Cozinha] <-> [Mesa 1] <-> [Mesa 2]
+// STRUCT DA LISTA
 // ======================================================
+
 typedef struct NoLista{
 
     TipoPosicao tipo;
+
     Mesa *mesa;
 
-
-    // ponteiros da lista duplamente encadeada
     struct NoLista *anterior;
 
     struct NoLista *proximo;
+
 }NoLista;
 
-// STRUCT DO RESTAURANTE
-// Guarda:
-// - início da lista
-// - fim da lista
+
+
+// ======================================================
+// STRUCT RESTAURANTE
+// ======================================================
+
 typedef struct{
 
     NoLista *inicio;
@@ -134,63 +142,68 @@ typedef struct{
 
 
 // ======================================================
-// STRUCT DO GARÇOM
-// ======================================================
-// O garçom se move utilizando um ponteiro
-// para a posição atual.
+// STRUCT GARÇOM
 // ======================================================
 
 typedef struct{
 
+    // posição atual do garçom
     NoLista *posicaoAtual;
 
-    Prato pratoAtual;
-
-    int carregandoPrato;
+    // prato carregado
+    // NULL = mãos vazias
+    Prato *pratoAtual;
 
 }Garcom;
 
+
+
+// ======================================================
 // FUNÇÕES DE INICIALIZAÇÃO
 // ======================================================
-// restaurante
+
 void inicializarRestaurante(Restaurante *r);
 
-
-// fila
 void inicializarFila(FilaCozinha *fila);
 
-
-// cria mesa
 Mesa* criarMesa(int numero);
 
-
-// cria nó cozinha
 NoLista* criarCozinha();
 
-
-// cria nó mesa
 NoLista* criarNoMesa(int numero);
 
-
-// adiciona posição no restaurante
 void adicionarPosicao(Restaurante *r, NoLista *novo);
 
-
-// inicializa garçom
 void inicializarGarcom(Garcom *g, Restaurante *r);
 
-#endif
+
+
+// ======================================================
+// MOVIMENTAÇÃO
+// ======================================================
 
 void irParaDireita(NoLista **posicaoAtual);
 
 void irParaEsquerda(NoLista **posicaoAtual);
 
 
+
+// ======================================================
+// FILA
+// ======================================================
+
 void enqueue(FilaCozinha *fila, Prato prato);
 
 Prato dequeue(FilaCozinha *fila);
 
 
+
+// ======================================================
+// INTERAÇÃO
+// ======================================================
+
 void interagir(NoLista *posicaoAtual,
                Garcom *garcom,
                FilaCozinha *cozinha);
+
+#endif
