@@ -1,36 +1,33 @@
-#include <stdio.h>
 #include "restaurante.h"
 
 
 int main(){
-    Lista restaurante;
-    inicializarLista(&restaurante);
 
-    // ADICIONANDO POSIÇÕES NO RESTAURANTE
-    // A lista ficará:
-    // Entrada <-> Mesa1 <-> Mesa2
-    // <-> Cozinha <-> Mesa3
-    adicionarPosicao(&restaurante, "Entrada");
+    Restaurante restaurante;
 
-    adicionarPosicao(&restaurante, "Mesa 1");
+    inicializarRestaurante(&restaurante);
 
-    adicionarPosicao(&restaurante, "Mesa 2");
+ 
+     FilaCozinha fila;
 
-    adicionarPosicao(&restaurante, "Cozinha");
+    inicializarFila(&fila);
 
-    adicionarPosicao(&restaurante, "Mesa 3");
+    // ==================================================
+    // CRIAÇÃO DO MAPA
+    // Cozinha <-> Mesa1 <-> Mesa2 <-> Mesa3
+    adicionarPosicao(&restaurante, criarCozinha());
 
+    adicionarPosicao(&restaurante, criarNoMesa(1));
 
-    // ======================================
-    // MOSTRAR O MAPA
-    // ======================================
+    adicionarPosicao(&restaurante, criarNoMesa(2));
 
-    printf("MAPA DO RESTAURANTE:\n\n");
+    adicionarPosicao(&restaurante, criarNoMesa(3));
 
+    Garcom garcom;
 
-    // chama a função que percorre
-    // e imprime a lista
-    mostrarRestaurante(&restaurante);
+    inicializarGarcom(&garcom, &restaurante);
+
+    printf("Estruturas inicializadas com sucesso!\n");
 
 
     return 0;
