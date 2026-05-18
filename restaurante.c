@@ -142,7 +142,7 @@ void irParaDireita(NoLista **posicaoAtual){
 
         *posicaoAtual = (*posicaoAtual)->proximo;
 
-        printf("Garçom foi para a direita.\n");
+        //printf("Garçom foi para a direita.\n");
     }
 
     else{
@@ -163,7 +163,7 @@ void irParaEsquerda(NoLista **posicaoAtual){
 
         *posicaoAtual = (*posicaoAtual)->anterior;
 
-        printf("Garçom foi para a esquerda.\n");
+        //printf("Garçom foi para a esquerda.\n");
     }
 
     else{
