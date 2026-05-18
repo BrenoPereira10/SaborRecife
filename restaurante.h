@@ -180,3 +180,17 @@ void adicionarPosicao(Restaurante *r, NoLista *novo);
 void inicializarGarcom(Garcom *g, Restaurante *r);
 
 #endif
+
+void irParaDireita(NoLista **posicaoAtual);
+
+void irParaEsquerda(NoLista **posicaoAtual);
+
+
+void enqueue(FilaCozinha *fila, Prato prato);
+
+Prato dequeue(FilaCozinha *fila);
+
+
+void interagir(NoLista *posicaoAtual,
+               Garcom *garcom,
+               FilaCozinha *cozinha);
