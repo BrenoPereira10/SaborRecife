@@ -58,10 +58,16 @@ typedef struct{
 
 typedef struct{
 
+    // estado atual do cliente
     EstadoCliente estado;
 
+    // tempo máximo esperando pedido
     int paciencia;
 
+    // tempo que o cliente leva comendo
+    int tempoComendo;
+
+    // prato desejado
     Prato pratoDesejado;
 
 }Cliente;
@@ -206,4 +212,11 @@ void interagir(NoLista *posicaoAtual,
                Garcom *garcom,
                FilaCozinha *cozinha);
 
+Cliente* criarCliente();
+
+void atualizarClientes(NoLista *inicioLista);
+
+
+// pontuação do jogo
+extern int pontuacao;
 #endif
