@@ -1,5 +1,7 @@
 #include "restaurante.h"
 
+
+// ======================================================
 // INICIALIZA RESTAURANTE
 // ======================================================
 
@@ -10,6 +12,9 @@ void inicializarRestaurante(Restaurante *r){
     r->fim = NULL;
 }
 
+
+
+// ======================================================
 // INICIALIZA FILA
 // ======================================================
 
@@ -20,7 +25,10 @@ void inicializarFila(FilaCozinha *fila){
     fila->fim = NULL;
 }
 
-// CRIA UMA MESA
+
+
+// ======================================================
+// CRIA MESA
 // ======================================================
 
 Mesa* criarMesa(int numero){
@@ -36,7 +44,10 @@ Mesa* criarMesa(int numero){
     return novaMesa;
 }
 
-// CRIA O NÓ DA COZINHA
+
+
+// ======================================================
+// CRIA COZINHA
 // ======================================================
 
 NoLista* criarCozinha(){
@@ -54,7 +65,10 @@ NoLista* criarCozinha(){
     return novo;
 }
 
-// CRIA UM NÓ DE MESA
+
+
+// ======================================================
+// CRIA NÓ DE MESA
 // ======================================================
 
 NoLista* criarNoMesa(int numero){
@@ -71,14 +85,16 @@ NoLista* criarNoMesa(int numero){
 
     return novo;
 }
-// ADICIONA POSIÇÃO NA LISTA
-// O restaurante é linear:
-// Cozinha <-> Mesa1 <-> Mesa2
-//
+
+
+
 // ======================================================
+// ADICIONA POSIÇÃO NA LISTA
+// ======================================================
+
 void adicionarPosicao(Restaurante *r, NoLista *novo){
 
-    // caso lista vazia
+    // lista vazia
     if(r->inicio == NULL){
 
         r->inicio = novo;
@@ -86,7 +102,7 @@ void adicionarPosicao(Restaurante *r, NoLista *novo){
         r->fim = novo;
     }
 
-    // caso já existam elementos
+    // lista já possui elementos
     else{
 
         novo->anterior = r->fim;
@@ -96,30 +112,36 @@ void adicionarPosicao(Restaurante *r, NoLista *novo){
         r->fim = novo;
     }
 }
-// INICIALIZA GARÇOM
-// O garçom começa na cozinha.
+
+
+
 // ======================================================
+// INICIALIZA GARÇOM
+// ======================================================
+
 void inicializarGarcom(Garcom *g, Restaurante *r){
 
     g->posicaoAtual = r->inicio;
 
-    g->carregandoPrato = 0;
+    // começa sem prato
+    g->pratoAtual = NULL;
 }
+
+
+
 // ======================================================
-// MOVER PARA DIREITA
-// ======================================================
-// Move o garçom para o próximo nó.
+// IR PARA DIREITA
 // ======================================================
 
 void irParaDireita(NoLista **posicaoAtual){
 
-    // verifica se existe próximo
     if((*posicaoAtual)->proximo != NULL){
 
         *posicaoAtual = (*posicaoAtual)->proximo;
 
         printf("Garçom foi para a direita.\n");
     }
+
     else{
 
         printf("Fim do restaurante!\n");
@@ -129,20 +151,18 @@ void irParaDireita(NoLista **posicaoAtual){
 
 
 // ======================================================
-// MOVER PARA ESQUERDA
-// ======================================================
-// Move o garçom para o nó anterior.
+// IR PARA ESQUERDA
 // ======================================================
 
 void irParaEsquerda(NoLista **posicaoAtual){
 
-    // verifica se existe anterior
     if((*posicaoAtual)->anterior != NULL){
 
         *posicaoAtual = (*posicaoAtual)->anterior;
 
         printf("Garçom foi para a esquerda.\n");
     }
+
     else{
 
         printf("Você já está na cozinha!\n");
@@ -153,8 +173,6 @@ void irParaEsquerda(NoLista **posicaoAtual){
 
 // ======================================================
 // ENQUEUE
-// ======================================================
-// Adiciona prato no fim da fila.
 // ======================================================
 
 void enqueue(FilaCozinha *fila, Prato prato){
@@ -174,7 +192,7 @@ void enqueue(FilaCozinha *fila, Prato prato){
         fila->fim = novo;
     }
 
-    // fila já possui elementos
+    // fila com elementos
     else{
 
         fila->fim->proximo = novo;
@@ -187,8 +205,6 @@ void enqueue(FilaCozinha *fila, Prato prato){
 
 // ======================================================
 // DEQUEUE
-// ======================================================
-// Remove prato do início da fila.
 // ======================================================
 
 Prato dequeue(FilaCozinha *fila){
@@ -215,7 +231,7 @@ Prato dequeue(FilaCozinha *fila){
     fila->inicio = fila->inicio->proximo;
 
 
-    // caso fila fique vazia
+    // fila ficou vazia
     if(fila->inicio == NULL){
 
         fila->fim = NULL;
@@ -243,7 +259,7 @@ void interagir(NoLista *posicaoAtual,
 
     if(posicaoAtual->tipo == COZINHA){
 
-        // verifica se garçom já está carregando algo
+        // já está carregando prato
         if(garcom->pratoAtual != NULL){
 
             printf("Você já está carregando um prato!\n");
@@ -281,9 +297,9 @@ void interagir(NoLista *posicaoAtual,
         Mesa *mesa = posicaoAtual->mesa;
 
 
-        // ==============================================
-        // MESA SUJA
-        // ==============================================
+        // ==================================================
+        // LIMPAR MESA
+        // ==================================================
 
         if(mesa->status == SUJA){
 
@@ -296,15 +312,15 @@ void interagir(NoLista *posicaoAtual,
         }
 
 
-        // ==============================================
-        // CLIENTE ESPERANDO
-        // ==============================================
+        // ==================================================
+        // ENTREGAR PEDIDO
+        // ==================================================
 
         if(mesa->status == OCUPADA &&
            mesa->cliente != NULL &&
            mesa->cliente->estado == ESPERANDO){
 
-            // verifica se o garçom possui prato
+            // garçom sem prato
             if(garcom->pratoAtual == NULL){
 
                 printf("Você não está carregando prato!\n");
@@ -313,7 +329,7 @@ void interagir(NoLista *posicaoAtual,
             }
 
 
-            // verifica se prato está correto
+            // prato correto
             if(strcmp(garcom->pratoAtual->nome,
                       mesa->cliente->pratoDesejado.nome) == 0){
 
@@ -328,6 +344,7 @@ void interagir(NoLista *posicaoAtual,
                 garcom->pratoAtual = NULL;
             }
 
+            // prato errado
             else{
 
                 printf("Pedido errado!\n");
