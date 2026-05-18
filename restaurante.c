@@ -1,5 +1,8 @@
 #include "restaurante.h"
+#include <time.h>
 
+// variável global de pontuação
+int pontuacao = 0;
 
 // ======================================================
 // INICIALIZA RESTAURANTE
