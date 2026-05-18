@@ -1,87 +1,107 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "restaurante.h"
 
+// INICIALIZA RESTAURANTE
+// ======================================================
 
-void inicializarLista(Lista *lista){
+void inicializarRestaurante(Restaurante *r){
 
-    lista->inicio = NULL;
+    r->inicio = NULL;
 
-    lista->fim = NULL;
+    r->fim = NULL;
 }
 
-void adicionarPosicao(Lista *lista, char nome[]){
+// INICIALIZA FILA
+// ======================================================
 
-    // malloc cria espaço na memória
-    // para um novo nó
-    No *novo = malloc(sizeof(No));
+void inicializarFila(FilaCozinha *fila){
 
+    fila->inicio = NULL;
 
-    // copia o nome recebido
-    // para dentro do nó
-    strcpy(novo->nome, nome);
+    fila->fim = NULL;
+}
 
+// CRIA UMA MESA
+// ======================================================
 
-    // inicialmente o novo nó
-    // não aponta para ninguém
-    novo->proximo = NULL;
+Mesa* criarMesa(int numero){
+
+    Mesa *novaMesa = malloc(sizeof(Mesa));
+
+    novaMesa->numero = numero;
+
+    novaMesa->status = VAZIA;
+
+    novaMesa->cliente = NULL;
+
+    return novaMesa;
+}
+
+// CRIA O NÓ DA COZINHA
+// ======================================================
+
+NoLista* criarCozinha(){
+
+    NoLista *novo = malloc(sizeof(NoLista));
+
+    novo->tipo = COZINHA;
+
+    novo->mesa = NULL;
 
     novo->anterior = NULL;
 
+    novo->proximo = NULL;
 
-    // ======================================
-    // CASO A LISTA ESTEJA VAZIA
-    // ======================================
-
-    if(lista->inicio == NULL){
-
-        // o início será o novo nó
-        lista->inicio = novo;
-
-        // o fim também será o novo nó
-        lista->fim = novo;
-    }
-
-    // ======================================
-    // CASO JÁ EXISTAM ELEMENTOS
-    // ======================================
-
-    else{
-
-        // o nó novo aponta para o antigo fim usando o ponteiro anterior
-        novo->anterior = lista->fim;
-
-
-        // o antigo fim aponta para o novo nó
-        lista->fim->proximo = novo;
-
-
-        // atualizamos o fim da lista
-        lista->fim = novo;
-    }
+    return novo;
 }
 
-//Função para percorrer o restaurante
+// CRIA UM NÓ DE MESA
+// ======================================================
 
-void mostrarRestaurante(Lista *lista){
+NoLista* criarNoMesa(int numero){
 
-    // auxiliar começa no início
-    No *aux = lista->inicio;
+    NoLista *novo = malloc(sizeof(NoLista));
 
+    novo->tipo = MESA;
 
-    // percorre enquanto existir nó
-    while(aux != NULL){
+    novo->mesa = criarMesa(numero);
 
-        // mostra o nome da posição
-        printf("[%s] ", aux->nome);
+    novo->anterior = NULL;
 
+    novo->proximo = NULL;
 
-        // vai para o próximo nó
-        aux = aux->proximo;
+    return novo;
+}
+// ADICIONA POSIÇÃO NA LISTA
+// O restaurante é linear:
+// Cozinha <-> Mesa1 <-> Mesa2
+//
+// ======================================================
+void adicionarPosicao(Restaurante *r, NoLista *novo){
+
+    // caso lista vazia
+    if(r->inicio == NULL){
+
+        r->inicio = novo;
+
+        r->fim = novo;
     }
 
+    // caso já existam elementos
+    else{
 
-    printf("\n");
+        novo->anterior = r->fim;
+
+        r->fim->proximo = novo;
+
+        r->fim = novo;
+    }
+}
+// INICIALIZA GARÇOM
+// O garçom começa na cozinha.
+// ======================================================
+void inicializarGarcom(Garcom *g, Restaurante *r){
+
+    g->posicaoAtual = r->inicio;
+
+    g->carregandoPrato = 0;
 }
