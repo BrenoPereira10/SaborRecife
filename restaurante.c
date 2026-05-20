@@ -1,12 +1,7 @@
 #include "restaurante.h"
 #include <time.h>
 
-// variável global de pontuação
 int pontuacao = 0;
-
-// ======================================================
-// INICIALIZA RESTAURANTE
-// ======================================================
 
 void inicializarRestaurante(Restaurante *r){
 
@@ -15,24 +10,12 @@ void inicializarRestaurante(Restaurante *r){
     r->fim = NULL;
 }
 
-
-
-// ======================================================
-// INICIALIZA FILA
-// ======================================================
-
 void inicializarFila(FilaCozinha *fila){
 
     fila->inicio = NULL;
 
     fila->fim = NULL;
 }
-
-
-
-// ======================================================
-// CRIA MESA
-// ======================================================
 
 Mesa* criarMesa(int numero){
 
@@ -46,12 +29,6 @@ Mesa* criarMesa(int numero){
 
     return novaMesa;
 }
-
-
-
-// ======================================================
-// CRIA COZINHA
-// ======================================================
 
 NoLista* criarCozinha(){
 
@@ -68,12 +45,6 @@ NoLista* criarCozinha(){
     return novo;
 }
 
-
-
-// ======================================================
-// CRIA NÓ DE MESA
-// ======================================================
-
 NoLista* criarNoMesa(int numero){
 
     NoLista *novo = malloc(sizeof(NoLista));
@@ -89,15 +60,8 @@ NoLista* criarNoMesa(int numero){
     return novo;
 }
 
-
-
-// ======================================================
-// ADICIONA POSIÇÃO NA LISTA
-// ======================================================
-
 void adicionarPosicao(Restaurante *r, NoLista *novo){
 
-    // lista vazia
     if(r->inicio == NULL){
 
         r->inicio = novo;
@@ -105,7 +69,6 @@ void adicionarPosicao(Restaurante *r, NoLista *novo){
         r->fim = novo;
     }
 
-    // lista já possui elementos
     else{
 
         novo->anterior = r->fim;
@@ -116,33 +79,18 @@ void adicionarPosicao(Restaurante *r, NoLista *novo){
     }
 }
 
-
-
-// ======================================================
-// INICIALIZA GARÇOM
-// ======================================================
-
 void inicializarGarcom(Garcom *g, Restaurante *r){
 
     g->posicaoAtual = r->inicio;
 
-    // começa sem prato
     g->pratoAtual = NULL;
 }
-
-
-
-// ======================================================
-// IR PARA DIREITA
-// ======================================================
 
 void irParaDireita(NoLista **posicaoAtual){
 
     if((*posicaoAtual)->proximo != NULL){
 
         *posicaoAtual = (*posicaoAtual)->proximo;
-
-        //printf("Garçom foi para a direita.\n");
     }
 
     else{
@@ -151,19 +99,11 @@ void irParaDireita(NoLista **posicaoAtual){
     }
 }
 
-
-
-// ======================================================
-// IR PARA ESQUERDA
-// ======================================================
-
 void irParaEsquerda(NoLista **posicaoAtual){
 
     if((*posicaoAtual)->anterior != NULL){
 
         *posicaoAtual = (*posicaoAtual)->anterior;
-
-        //printf("Garçom foi para a esquerda.\n");
     }
 
     else{
@@ -171,12 +111,6 @@ void irParaEsquerda(NoLista **posicaoAtual){
         printf("Você já está na cozinha!\n");
     }
 }
-
-
-
-// ======================================================
-// ENQUEUE
-// ======================================================
 
 void enqueue(FilaCozinha *fila, Prato prato){
 
@@ -186,8 +120,6 @@ void enqueue(FilaCozinha *fila, Prato prato){
 
     novo->proximo = NULL;
 
-
-    // fila vazia
     if(fila->inicio == NULL){
 
         fila->inicio = novo;
@@ -195,7 +127,6 @@ void enqueue(FilaCozinha *fila, Prato prato){
         fila->fim = novo;
     }
 
-    // fila com elementos
     else{
 
         fila->fim->proximo = novo;
@@ -204,20 +135,12 @@ void enqueue(FilaCozinha *fila, Prato prato){
     }
 }
 
-
-
-// ======================================================
-// DEQUEUE
-// ======================================================
-
 Prato dequeue(FilaCozinha *fila){
 
     Prato pratoVazio;
 
     strcpy(pratoVazio.nome, "Vazio");
 
-
-    // fila vazia
     if(fila->inicio == NULL){
 
         printf("Nenhum prato pronto na cozinha!\n");
@@ -225,44 +148,28 @@ Prato dequeue(FilaCozinha *fila){
         return pratoVazio;
     }
 
-
     NoFila *remover = fila->inicio;
 
     Prato prato = remover->prato;
 
-
     fila->inicio = fila->inicio->proximo;
 
-
-    // fila ficou vazia
     if(fila->inicio == NULL){
 
         fila->fim = NULL;
     }
-
 
     free(remover);
 
     return prato;
 }
 
-
-
-// ======================================================
-// INTERAÇÃO PRINCIPAL
-// ======================================================
-
 void interagir(NoLista *posicaoAtual,
                Garcom *garcom,
                FilaCozinha *cozinha){
 
-    // ==================================================
-    // COZINHA
-    // ==================================================
-
     if(posicaoAtual->tipo == COZINHA){
 
-        // já está carregando prato
         if(garcom->pratoAtual != NULL){
 
             printf("Você já está carregando um prato!\n");
@@ -270,12 +177,8 @@ void interagir(NoLista *posicaoAtual,
             return;
         }
 
-
-        // pega prato da fila
         Prato pratoPegado = dequeue(cozinha);
 
-
-        // verifica se veio prato válido
         if(strcmp(pratoPegado.nome, "Vazio") != 0){
 
             garcom->pratoAtual = malloc(sizeof(Prato));
@@ -289,20 +192,9 @@ void interagir(NoLista *posicaoAtual,
         return;
     }
 
-
-
-    // ==================================================
-    // MESA
-    // ==================================================
-
     if(posicaoAtual->tipo == MESA){
 
         Mesa *mesa = posicaoAtual->mesa;
-
-
-        // ==================================================
-        // LIMPAR MESA
-        // ==================================================
 
         if(mesa->status == SUJA){
 
@@ -314,16 +206,10 @@ void interagir(NoLista *posicaoAtual,
             return;
         }
 
-
-        // ==================================================
-        // ENTREGAR PEDIDO
-        // ==================================================
-
         if(mesa->status == OCUPADA &&
            mesa->cliente != NULL &&
            mesa->cliente->estado == ESPERANDO){
 
-            // garçom sem prato
             if(garcom->pratoAtual == NULL){
 
                 printf("Você não está carregando prato!\n");
@@ -331,23 +217,18 @@ void interagir(NoLista *posicaoAtual,
                 return;
             }
 
-
-            // prato correto
             if(strcmp(garcom->pratoAtual->nome,
                       mesa->cliente->pratoDesejado.nome) == 0){
 
                 printf("Pedido entregue corretamente!\n");
 
-
                 mesa->cliente->estado = COMENDO;
-
 
                 free(garcom->pratoAtual);
 
                 garcom->pratoAtual = NULL;
             }
 
-            // prato errado
             else{
 
                 printf("Pedido errado!\n");
@@ -361,28 +242,17 @@ void interagir(NoLista *posicaoAtual,
         }
     }
 }
-// ======================================================
-// CRIA CLIENTE
-// ======================================================
 
 Cliente* criarCliente(){
 
     Cliente *novo = malloc(sizeof(Cliente));
 
-
-    // cliente começa esperando
     novo->estado = ESPERANDO;
 
-
-    // tempo aleatório de paciência
     novo->paciencia = 5 + rand() % 11;
 
-
-    // tempo para comer
     novo->tempoComendo = 5 + rand() % 6;
 
-
-    // cardápio recifense
     char cardapio[5][50] = {
 
         "Tapioca",
@@ -392,51 +262,23 @@ Cliente* criarCliente(){
         "Caldinho"
     };
 
-
-    // escolhe prato aleatório
     int indice = rand() % 5;
 
     strcpy(novo->pratoDesejado.nome,
            cardapio[indice]);
 
-
     return novo;
 }
-
-
-
-// ======================================================
-// ATUALIZA CLIENTES
-// ======================================================
-// Essa função representa um "tick" do jogo.
-//
-// Ela:
-// - gera clientes
-// - reduz paciência
-// - processa clientes comendo
-// - gera pontuação
-//
-// ======================================================
 
 void atualizarClientes(NoLista *inicioLista){
 
     NoLista *aux = inicioLista;
 
-
-    // ==================================================
-    // SPAWN DE CLIENTE
-    // ==================================================
-    // 30% de chance de gerar cliente
-    // ==================================================
-
     int chanceSpawn = rand() % 100;
-
 
     if(chanceSpawn < 30){
 
-        // conta mesas vazias
         int mesasVazias = 0;
-
 
         aux = inicioLista;
 
@@ -451,8 +293,6 @@ void atualizarClientes(NoLista *inicioLista){
             aux = aux->proximo;
         }
 
-
-        // existe mesa disponível
         if(mesasVazias > 0){
 
             int alvo = rand() % mesasVazias;
@@ -461,7 +301,6 @@ void atualizarClientes(NoLista *inicioLista){
 
             aux = inicioLista;
 
-
             while(aux != NULL){
 
                 if(aux->tipo == MESA &&
@@ -469,7 +308,6 @@ void atualizarClientes(NoLista *inicioLista){
 
                     if(contador == alvo){
 
-                        // cria cliente
                         aux->mesa->cliente = criarCliente();
 
                         aux->mesa->status = OCUPADA;
@@ -491,14 +329,7 @@ void atualizarClientes(NoLista *inicioLista){
         }
     }
 
-
-
-    // ==================================================
-    // PERCORRE TODAS AS MESAS
-    // ==================================================
-
     aux = inicioLista;
-
 
     while(aux != NULL){
 
@@ -507,27 +338,18 @@ void atualizarClientes(NoLista *inicioLista){
 
             Cliente *cliente = aux->mesa->cliente;
 
-
-            // ==========================================
-            // CLIENTE ESPERANDO
-            // ==========================================
-
             if(cliente->estado == ESPERANDO){
 
                 cliente->paciencia--;
-
 
                 printf("Mesa %d esperando... (%d)\n",
                        aux->mesa->numero,
                        cliente->paciencia);
 
-
-                // cliente perdeu paciência
                 if(cliente->paciencia <= 0){
 
                     printf("Cliente da Mesa %d foi embora!\n",
                            aux->mesa->numero);
-
 
                     free(aux->mesa->cliente);
 
@@ -537,35 +359,23 @@ void atualizarClientes(NoLista *inicioLista){
                 }
             }
 
-
-            // ==========================================
-            // CLIENTE COMENDO
-            // ==========================================
-
             else if(cliente->estado == COMENDO){
 
                 cliente->tempoComendo--;
-
 
                 printf("Mesa %d comendo... (%d)\n",
                        aux->mesa->numero,
                        cliente->tempoComendo);
 
-
-                // terminou de comer
                 if(cliente->tempoComendo <= 0){
 
                     printf("Cliente da Mesa %d terminou de comer!\n",
                            aux->mesa->numero);
 
-
-                    // aumenta pontuação
                     pontuacao += 10;
-
 
                     printf("Pontuação: %d\n",
                            pontuacao);
-
 
                     free(aux->mesa->cliente);
 
