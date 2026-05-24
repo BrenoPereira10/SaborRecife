@@ -1,4 +1,5 @@
 #include "restaurante.h"
+#include "entidades.h"
 #include <time.h>
 
 int pontuacao = 0;

@@ -132,7 +132,7 @@ void atualizarClientes(NoLista *inicioLista){
                 printf("Mesa %d comendo... (%d)\n", aux->mesa->numero, cliente->tempoComendo);
 
                 if(cliente->tempoComendo <= 0){
-                    printf("Cliente da Mesa %d terminou de comer!\n");
+                    printf("Cliente da Mesa %d terminou de comer!\n", aux->mesa->numero);
                     pontuacao += 10;
                     printf("Pontuação: %d\n", pontuacao);
                     free(aux->mesa->cliente);

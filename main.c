@@ -1,5 +1,4 @@
 #include "restaurante.h"
-#include "restaurante.h"
 #include "entidades.h"
 #include "raylib.h"
 #include <time.h>
