@@ -5,12 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-// ======================================================
-// ENUMS
-// ======================================================
-
-// Estado do cliente
 typedef enum{
 
     ESPERANDO,
@@ -19,8 +13,6 @@ typedef enum{
 
 }EstadoCliente;
 
-
-// Status da mesa
 typedef enum{
 
     VAZIA,
@@ -29,8 +21,6 @@ typedef enum{
 
 }StatusMesa;
 
-
-// Tipo da posição do mapa
 typedef enum{
 
     COZINHA,
@@ -38,45 +28,23 @@ typedef enum{
 
 }TipoPosicao;
 
-
-
-// ======================================================
-// STRUCT PRATO
-// ======================================================
-
 typedef struct{
 
     char nome[50];
 
 }Prato;
 
-
-
-// ======================================================
-// STRUCT CLIENTE
-// ======================================================
-
 typedef struct{
 
-    // estado atual do cliente
     EstadoCliente estado;
 
-    // tempo máximo esperando pedido
     int paciencia;
 
-    // tempo que o cliente leva comendo
     int tempoComendo;
 
-    // prato desejado
     Prato pratoDesejado;
 
 }Cliente;
-
-
-
-// ======================================================
-// STRUCT MESA
-// ======================================================
 
 typedef struct{
 
@@ -88,13 +56,6 @@ typedef struct{
 
 }Mesa;
 
-
-
-// ======================================================
-// STRUCT FILA
-// ======================================================
-
-// nó da fila
 typedef struct NoFila{
 
     Prato prato;
@@ -103,8 +64,6 @@ typedef struct NoFila{
 
 }NoFila;
 
-
-// fila principal
 typedef struct{
 
     NoFila *inicio;
@@ -112,12 +71,6 @@ typedef struct{
     NoFila *fim;
 
 }FilaCozinha;
-
-
-
-// ======================================================
-// STRUCT DA LISTA
-// ======================================================
 
 typedef struct NoLista{
 
@@ -131,12 +84,6 @@ typedef struct NoLista{
 
 }NoLista;
 
-
-
-// ======================================================
-// STRUCT RESTAURANTE
-// ======================================================
-
 typedef struct{
 
     NoLista *inicio;
@@ -145,28 +92,13 @@ typedef struct{
 
 }Restaurante;
 
-
-
-// ======================================================
-// STRUCT GARÇOM
-// ======================================================
-
 typedef struct{
 
-    // posição atual do garçom
     NoLista *posicaoAtual;
 
-    // prato carregado
-    // NULL = mãos vazias
     Prato *pratoAtual;
 
 }Garcom;
-
-
-
-// ======================================================
-// FUNÇÕES DE INICIALIZAÇÃO
-// ======================================================
 
 void inicializarRestaurante(Restaurante *r);
 
@@ -179,12 +111,6 @@ NoLista* criarNoMesa(int numero);
 void adicionarPosicao(Restaurante *r, NoLista *novo);
 
 void inicializarGarcom(Garcom *g, Restaurante *r);
-
-
-
-// ======================================================
-// MOVIMENTAÇÃO
-// ======================================================
 
 void irParaDireita(NoLista **posicaoAtual);
 
@@ -203,4 +129,5 @@ void interagir(NoLista *posicaoAtual,
 
 // pontuação do jogo
 extern int pontuacao;
+
 #endif
