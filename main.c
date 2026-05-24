@@ -1,4 +1,6 @@
 #include "restaurante.h"
+#include "restaurante.h"
+#include "entidades.h"
 
 int main(){
 

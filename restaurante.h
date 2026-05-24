@@ -170,8 +170,6 @@ typedef struct{
 
 void inicializarRestaurante(Restaurante *r);
 
-void inicializarFila(FilaCozinha *fila);
-
 Mesa* criarMesa(int numero);
 
 NoLista* criarCozinha();
@@ -195,26 +193,12 @@ void irParaEsquerda(NoLista **posicaoAtual);
 
 
 // ======================================================
-// FILA
-// ======================================================
-
-void enqueue(FilaCozinha *fila, Prato prato);
-
-Prato dequeue(FilaCozinha *fila);
-
-
-
-// ======================================================
 // INTERAÇÃO
 // ======================================================
 
 void interagir(NoLista *posicaoAtual,
                Garcom *garcom,
                FilaCozinha *cozinha);
-
-Cliente* criarCliente();
-
-void atualizarClientes(NoLista *inicioLista);
 
 
 // pontuação do jogo
