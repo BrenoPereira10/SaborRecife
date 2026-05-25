@@ -122,6 +122,9 @@ void atualizarClientes(NoLista *inicioLista){
 
                 if(cliente->paciencia <= 0){
                     printf("Cliente da Mesa %d foi embora!\n", aux->mesa->numero);
+                    
+                    pontuacao -= 10; // >>> A LINHA ADICIONADA AQUI <<<
+
                     free(aux->mesa->cliente);
                     aux->mesa->cliente = NULL;
                     aux->mesa->status = SUJA;

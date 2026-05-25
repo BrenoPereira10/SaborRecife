@@ -105,6 +105,11 @@ int main(){
             atualizarClientes(restaurante.inicio);
 
             tempoAtualizacao = 0;
+            
+            if(pontuacao <= -30) {
+                printf("FALÊNCIA! O restaurante fechou. Fim de jogo.\n");
+                break; 
+            }
         }
 
         // ==============================================
@@ -244,6 +249,36 @@ int main(){
     // ==================================================
 
     CloseWindow();
+// ==================================================
+    // LIMPEZA DE MEMÓRIA (FIM DO EXPEDIENTE)
+    // ==================================================
+    
+    // 1. Esvaziar a Fila da Cozinha
+    while (cozinha.inicio != NULL) {
+        dequeue(&cozinha); // A própria função dequeue já dá 'free' no nó
+    }
 
+    // 2. Limpar o mapa do Restaurante (Lista Duplamente Encadeada)
+    NoLista *atual = restaurante.inicio;
+    while (atual != NULL) {
+        NoLista *remover = atual;
+        atual = atual->proximo; // Salva o próximo antes de apagar o atual
+        
+        if (remover->tipo == MESA) {
+            // Se tiver um cliente na mesa, limpa ele primeiro
+            if (remover->mesa->cliente != NULL) {
+                free(remover->mesa->cliente);
+            }
+            // Limpa a mesa em si
+            free(remover->mesa);
+        }
+        // Limpa o "quadrado" (Nó) do chão
+        free(remover);
+    }
+
+    // 3. Limpar o prato da mão do garçom, se ele estiver segurando algo
+    if (garcom.pratoAtual != NULL) {
+        free(garcom.pratoAtual);
+    }
     return 0;
 }
