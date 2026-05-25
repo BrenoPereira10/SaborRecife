@@ -121,6 +121,7 @@ int main(){
             if (totalEsperando > 1) {
                 quickSortClientes(mesasOrdenadas, 0, totalEsperando - 1);
             }
+            exibirFilaDeEspera(mesasOrdenadas, totalEsperando);
             tempoAtualizacao = 0;
             
             if(pontuacao <= -30) {
