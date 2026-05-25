@@ -5,132 +5,91 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef enum{
-
+typedef enum {
     ESPERANDO,
     COMENDO,
     FOI_EMBORA
+} EstadoCliente;
 
-}EstadoCliente;
-
-typedef enum{
-
+typedef enum {
     VAZIA,
     OCUPADA,
     SUJA
+} StatusMesa;
 
-}StatusMesa;
-
-typedef enum{
-
+typedef enum {
+    MESA,
     COZINHA,
-    MESA
+    CAMINHO
+} TipoPosicao;
 
-}TipoPosicao;
-
-typedef struct{
-
+typedef struct {
     char nome[50];
+} Prato;
 
-}Prato;
+struct NoLista;
 
-typedef struct{
-
+typedef struct Cliente {
     EstadoCliente estado;
-
     int paciencia;
-
     int tempoComendo;
-
     Prato pratoDesejado;
+    int idSprite; 
+    struct NoLista *posicaoAtual; 
+} Cliente;
 
-}Cliente;
-
-typedef struct{
-
+typedef struct {
     int numero;
-
     StatusMesa status;
-
     Cliente *cliente;
+} Mesa;
 
-}Mesa;
-
-typedef struct NoFila{
-
+typedef struct NoFila {
     Prato prato;
-
     struct NoFila *proximo;
+} NoFila;
 
-}NoFila;
-
-typedef struct{
-
+typedef struct {
     NoFila *inicio;
-
     NoFila *fim;
+} FilaCozinha;
 
-}FilaCozinha;
-
-typedef struct NoLista{
-
+typedef struct NoLista {
     TipoPosicao tipo;
-
     Mesa *mesa;
-
+    int posX; 
+    int posY; 
     struct NoLista *anterior;
-
     struct NoLista *proximo;
+} NoLista;
 
-}NoLista;
-
-typedef struct{
-
+typedef struct {
     NoLista *inicio;
-
     NoLista *fim;
+} Restaurante;
 
-}Restaurante;
-
-typedef struct{
-
+typedef struct {
     NoLista *posicaoAtual;
-
     Prato *pratoAtual;
+    float timerTransicao;
+    int direcao; 
+} Garcom;
 
-}Garcom;
+extern int pontuacao;
 
 void inicializarRestaurante(Restaurante *r);
-
 Mesa* criarMesa(int numero);
-
-NoLista* criarCozinha();
-
-NoLista* criarNoMesa(int numero);
-
+NoLista* criarCozinha(int x, int y);
+NoLista* criarNoMesa(int numero, int x, int y);
+NoLista* criarCaminho(int x, int y);
 void adicionarPosicao(Restaurante *r, NoLista *novo);
-
 void inicializarGarcom(Garcom *g, Restaurante *r);
-
-void irParaDireita(NoLista **posicaoAtual);
-
-void irParaEsquerda(NoLista **posicaoAtual);
-
-
-
-// ======================================================
-// INTERAÇÃO
-// ======================================================
-
-void interagir(NoLista *posicaoAtual,
-               Garcom *garcom,
-               FilaCozinha *cozinha);
-
-
-// pontuação do jogo
-extern int pontuacao;
+void irParaDireita(Garcom *g);
+void irParaEsquerda(Garcom *g);
+void atualizarMovimentoGarcom(Garcom *g, float dt);
+void interagir(NoLista *posicaoAtual, Garcom *garcom, FilaCozinha *cozinha);
 
 int contarMesasOcupadas(NoLista *inicio);
 void quickSortClientes(Mesa **mesas, int inicio, int fim);
-void exibirFilaDeEspera(Mesa **mesas, int total);
+
 #endif

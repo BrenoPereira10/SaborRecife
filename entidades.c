@@ -1,24 +1,14 @@
 #include "entidades.h"
-#include <time.h>
-#include <stdlib.h>
-#include <string.h>
 
-// ======================================================
-// INICIALIZA FILA
-// ======================================================
 void inicializarFila(FilaCozinha *fila){
     fila->inicio = NULL;
     fila->fim = NULL;
 }
 
-// ======================================================
-// ENQUEUE (Adiciona prato na fila da cozinha)
-// ======================================================
 void enqueue(FilaCozinha *fila, Prato prato){
     NoFila *novo = malloc(sizeof(NoFila));
     novo->prato = prato;
     novo->proximo = NULL;
-
     if(fila->inicio == NULL){
         fila->inicio = novo;
         fila->fim = novo;
@@ -28,64 +18,57 @@ void enqueue(FilaCozinha *fila, Prato prato){
     }
 }
 
-// ======================================================
-// DEQUEUE (Retira prato da fila da cozinha)
-// ======================================================
 Prato dequeue(FilaCozinha *fila){
     Prato pratoVazio;
     strcpy(pratoVazio.nome, "Vazio");
-
-    if(fila->inicio == NULL){
-        printf("Nenhum prato pronto na cozinha!\n");
-        return pratoVazio;
-    }
-
+    if(fila->inicio == NULL) return pratoVazio;
     NoFila *remover = fila->inicio;
     Prato prato = remover->prato;
     fila->inicio = fila->inicio->proximo;
-
-    if(fila->inicio == NULL){
-        fila->fim = NULL;
-    }
-
+    if(fila->inicio == NULL) fila->fim = NULL;
     free(remover);
     return prato;
 }
 
-// ======================================================
-// CRIA CLIENTE
-// ======================================================
-Cliente* criarCliente(){
+Cliente* criarCliente(NoLista *inicioLista){
     Cliente *novo = malloc(sizeof(Cliente));
     novo->estado = ESPERANDO;
-    novo->paciencia = 5 + rand() % 11;
+    novo->paciencia = 15 + rand() % 10; 
     novo->tempoComendo = 5 + rand() % 6;
-
-    char cardapio[5][50] = {
-        "Tapioca", "Bolo de Rolo", "Cuscuz", "Cartola", "Caldinho"
-    };
-
-    int indice = rand() % 5;
-    strcpy(novo->pratoDesejado.nome, cardapio[indice]);
-
+    novo->idSprite = rand() % 3; 
+    novo->posicaoAtual = inicioLista; 
+    char cardapio[5][50] = { "Tapioca", "Bolo de Rolo", "Cuscuz", "Cartola", "Caldinho" };
+    strcpy(novo->pratoDesejado.nome, cardapio[rand() % 5]);
     return novo;
 }
 
-// ======================================================
-// ATUALIZA CLIENTES (IA dos clientes)
-// ======================================================
+void atualizarFisicaClientes(NoLista *inicioLista, float dt){
+    static float timerMove = 0.0f;
+    timerMove += dt;
+    if(timerMove >= 0.25f){ 
+        timerMove = 0.0f;
+        NoLista *aux = inicioLista;
+        while(aux != NULL){
+            if(aux->tipo == MESA && aux->mesa->cliente != NULL){
+                Cliente *c = aux->mesa->cliente;
+                if(c->posicaoAtual != aux && c->posicaoAtual->proximo != NULL){
+                    c->posicaoAtual = c->posicaoAtual->proximo;
+                }
+            }
+            aux = aux->proximo;
+        }
+    }
+}
+
 void atualizarClientes(NoLista *inicioLista){
     NoLista *aux = inicioLista;
     int chanceSpawn = rand() % 100;
 
-    // SPAWN DE CLIENTE (30% de chance)
-    if(chanceSpawn < 30){
+    if(chanceSpawn < 30){ 
         int mesasVazias = 0;
         aux = inicioLista;
         while(aux != NULL){
-            if(aux->tipo == MESA && aux->mesa->status == VAZIA){
-                mesasVazias++;
-            }
+            if(aux->tipo == MESA && aux->mesa->status == VAZIA) mesasVazias++;
             aux = aux->proximo;
         }
 
@@ -93,14 +76,11 @@ void atualizarClientes(NoLista *inicioLista){
             int alvo = rand() % mesasVazias;
             int contador = 0;
             aux = inicioLista;
-
             while(aux != NULL){
                 if(aux->tipo == MESA && aux->mesa->status == VAZIA){
                     if(contador == alvo){
-                        aux->mesa->cliente = criarCliente();
+                        aux->mesa->cliente = criarCliente(inicioLista);
                         aux->mesa->status = OCUPADA;
-                        printf("\nNovo cliente chegou na Mesa %d\n", aux->mesa->numero);
-                        printf("Pedido: %s\n", aux->mesa->cliente->pratoDesejado.nome);
                         break;
                     }
                     contador++;
@@ -110,37 +90,28 @@ void atualizarClientes(NoLista *inicioLista){
         }
     }
 
-    // PERCORRE TODAS AS MESAS PARA REDUZIR TEMPO
     aux = inicioLista;
     while(aux != NULL){
         if(aux->tipo == MESA && aux->mesa->cliente != NULL){
             Cliente *cliente = aux->mesa->cliente;
-
-            if(cliente->estado == ESPERANDO){
-                cliente->paciencia--;
-                printf("Mesa %d esperando... (%d)\n", aux->mesa->numero, cliente->paciencia);
-
-                if(cliente->paciencia <= 0){
-                    printf("Cliente da Mesa %d foi embora!\n", aux->mesa->numero);
-                    
-                    pontuacao -= 10; // >>> A LINHA ADICIONADA AQUI <<<
-
-                    free(aux->mesa->cliente);
-                    aux->mesa->cliente = NULL;
-                    aux->mesa->status = SUJA;
+            if(cliente->posicaoAtual == aux) {
+                if(cliente->estado == ESPERANDO){
+                    cliente->paciencia--;
+                    if(cliente->paciencia <= 0){
+                        pontuacao -= 10;
+                        free(aux->mesa->cliente);
+                        aux->mesa->cliente = NULL;
+                        aux->mesa->status = SUJA;
+                    }
                 }
-            }
-            else if(cliente->estado == COMENDO){
-                cliente->tempoComendo--;
-                printf("Mesa %d comendo... (%d)\n", aux->mesa->numero, cliente->tempoComendo);
-
-                if(cliente->tempoComendo <= 0){
-                    printf("Cliente da Mesa %d terminou de comer!\n", aux->mesa->numero);
-                    pontuacao += 10;
-                    printf("Pontuação: %d\n", pontuacao);
-                    free(aux->mesa->cliente);
-                    aux->mesa->cliente = NULL;
-                    aux->mesa->status = SUJA;
+                else if(cliente->estado == COMENDO){
+                    cliente->tempoComendo--;
+                    if(cliente->tempoComendo <= 0){
+                        pontuacao += 10;
+                        free(aux->mesa->cliente);
+                        aux->mesa->cliente = NULL;
+                        aux->mesa->status = SUJA;
+                    }
                 }
             }
         }
