@@ -1,16 +1,34 @@
 # Compilador
 CC = gcc
 
+# =========================================================
+# VERIFICAÇÃO AUTOMÁTICA DE SISTEMA OPERACIONAL
+# =========================================================
+ifeq ($(OS),Windows_NT)
+    # Flags de Linkagem para Windows (MinGW)
+    LDFLAGS = -lraylib -lopengl32 -lgdi32 -lwinmm
+    # Extensão do executável no Windows
+    TARGET = sabor_recife.exe
+    # Comando para limpar arquivos no Windows (CMD)
+    RM_CMD = del /Q /F *.o $(TARGET) 2>nul || exit 0
+else
+    # Flags de Linkagem para Linux (WSL / Ubuntu)
+    LDFLAGS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+    # Nome do executável no Linux
+    TARGET = sabor_recife
+    # Comando para limpar arquivos no Linux
+    RM_CMD = rm -f $(OBJS) $(TARGET)
+endif
+# =========================================================
+
+# Se o raylib.h estiver em uma pasta específica, adicione o caminho aqui (ex: -I./include)
+INCLUDES = -I.
+
+# Se o arquivo libraylib.a estiver em uma pasta específica, adicione o caminho aqui (ex: -L./lib)
+LIBRARIES = -L.
+
 # Flags de compilação (Avisos e Otimização)
-CFLAGS = -Wall -Wextra -O2
-
-# Flags de Linkagem para a biblioteca Raylib no Linux
-# Se estiver usando Windows (MinGW), você precisará de flags diferentes:
-# LDFLAGS = -lraylib -lopengl32 -lgdi32 -lwinmm
-LDFLAGS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
-
-# Nome do arquivo executável final
-TARGET = sabor_recife
+CFLAGS = -Wall -Wextra -O2 $(INCLUDES)
 
 # Arquivos de código-fonte
 SRCS = main.c entidades.c restaurante.c
@@ -23,7 +41,7 @@ all: $(TARGET)
 
 # Regra para compilar o executável final ligando os objetos
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBRARIES) $(LDFLAGS)
 
 # Regra genérica para gerar os arquivos objeto (.o) a partir dos (.c)
 %.o: %.c
@@ -31,4 +49,4 @@ $(TARGET): $(OBJS)
 
 # Regra para limpar os arquivos de compilação
 clean:
-	rm -f $(OBJS) $(TARGET)
+	$(RM_CMD)
