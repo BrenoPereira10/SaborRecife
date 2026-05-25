@@ -72,6 +72,8 @@ int main(){
     // ==================================================
 
     while(!WindowShouldClose()){
+          int totalEsperando = 0;
+        Mesa *mesasOrdenadas[5];
 
         // ==============================================
         // INPUTS
@@ -104,6 +106,21 @@ int main(){
 
             atualizarClientes(restaurante.inicio);
 
+            int totalEsperando = contarMesasOcupadas(restaurante.inicio);
+            Mesa *mesasOrdenadas[5];
+            int idx = 0;
+
+            NoLista *percorre = restaurante.inicio;
+            while (percorre != NULL) {
+                if (percorre->tipo == MESA && percorre->mesa->cliente != NULL && percorre->mesa->cliente->estado == ESPERANDO) {
+                    mesasOrdenadas[idx++] = percorre->mesa;
+                }
+                percorre = percorre->proximo;
+            }
+
+            if (totalEsperando > 1) {
+                quickSortClientes(mesasOrdenadas, 0, totalEsperando - 1);
+            }
             tempoAtualizacao = 0;
             
             if(pontuacao <= -30) {
@@ -227,6 +244,25 @@ int main(){
                      100,
                      25,
                      DARKBLUE);
+        }
+        DrawRectangle(800, 120, 190, 360, Fade(DARKBROWN, 0.85f));
+        DrawText("URGENCIA", 815, 130, 18, YELLOW);
+
+        if (totalEsperando == 0) {
+            DrawText("Sem pedidos", 815, 160, 16, LIGHTGRAY);
+        } else {
+            for (int k = 0; k < totalEsperando; k++) {
+                Color cor = GREEN;
+                if (mesasOrdenadas[k]->cliente->paciencia <= 3) cor = RED;
+                else if (mesasOrdenadas[k]->cliente->paciencia <= 6) cor = ORANGE;
+
+                DrawText(TextFormat("#%d Mesa %d | %s | Pac:%d",
+                         k + 1,
+                         mesasOrdenadas[k]->numero,
+                         mesasOrdenadas[k]->cliente->pratoDesejado.nome,
+                         mesasOrdenadas[k]->cliente->paciencia),
+                         815, 160 + k * 45, 15, cor);
+            }
         }
 
         DrawText("A/D ou Setas = mover",
