@@ -130,4 +130,7 @@ void interagir(NoLista *posicaoAtual,
 // pontuação do jogo
 extern int pontuacao;
 
+int contarMesasOcupadas(NoLista *inicio);
+void quickSortClientes(Mesa **mesas, int inicio, int fim);
+
 #endif
