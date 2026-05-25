@@ -132,5 +132,5 @@ extern int pontuacao;
 
 int contarMesasOcupadas(NoLista *inicio);
 void quickSortClientes(Mesa **mesas, int inicio, int fim);
-
+void exibirFilaDeEspera(Mesa **mesas, int total);
 #endif
