@@ -196,3 +196,38 @@ void interagir(NoLista *posicaoAtual,
         }
     }
 }
+int contarMesasOcupadas(NoLista *inicio) {
+    int count = 0;
+    NoLista *aux = inicio;
+    while (aux != NULL) {
+        if (aux->tipo == MESA && aux->mesa->cliente != NULL && aux->mesa->cliente->estado == ESPERANDO) {
+            count++;
+        }
+        aux = aux->proximo;
+    }
+    return count;
+}
+
+void quickSortClientes(Mesa **mesas, int inicio, int fim) {
+    if (inicio >= fim) return;
+
+    Mesa *pivo = mesas[fim];
+    int i = inicio - 1;
+
+    for (int j = inicio; j < fim; j++) {
+        if (mesas[j]->cliente->paciencia < pivo->cliente->paciencia) {
+            i++;
+            Mesa *temp = mesas[i];
+            mesas[i] = mesas[j];
+            mesas[j] = temp;
+        }
+    }
+
+    Mesa *temp = mesas[i + 1];
+    mesas[i + 1] = mesas[fim];
+    mesas[fim] = temp;
+
+    int posicaoPivo = i + 1;
+    quickSortClientes(mesas, inicio, posicaoPivo - 1);
+    quickSortClientes(mesas, posicaoPivo + 1, fim);
+}
