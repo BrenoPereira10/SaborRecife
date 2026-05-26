@@ -5,29 +5,40 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef enum { ESTADO_MENU, ESTADO_JOGANDO, ESTADO_FALENCIA } EstadoJogo;
+// Adicionado o ESTADO_AJUSTES na máquina de estados
+typedef enum { ESTADO_MENU, ESTADO_JOGANDO, ESTADO_FALENCIA, ESTADO_AJUSTES } EstadoJogo;
 
-// Altura padrão desejada na tela para alinhar com o mapa
-const float ALTURA_MESA = 90.0f; // Escala visual da mesa
-const float ALTURA_PERSONAGEM = 85.0f; // Altura dos personagens
+const float ALTURA_MESA = 90.0f; 
+const float ALTURA_PERSONAGEM = 85.0f; 
 
 int main(){
     srand(time(NULL));
-    // Mapa original é proporcional a 1000x600, mantemos a janela fixa
+    
     InitWindow(1000, 600, "Sabor Recife - Versao Corrigida 2.0");
+    InitAudioDevice(); // Habilita o sistema de som da Raylib
     SetTargetFPS(60);
 
     // ==============================================
-    // CARREGAMENTO DE TEXTURAS (CAMINHOS IMAGENS/)
+    // CARREGAMENTO DE TEXTURAS
     // ==============================================
-    
-    // MENU RESTAURADO - Trocado de JPG para PNG para evitar falha silenciosa de carga!
-    // VOCÊ PRECISA CONVERTER Telainicio.jpg para Telainicio.png do seu lado.
     Texture2D fundoMenu = LoadTexture("imagens/Telainicio.png"); 
-    Rectangle btnJogar = { 390, 240, 220, 65 }; // Mantido da lógica original
+    
+    // Alinhamento exato com a imagem do menu original (retângulos invisíveis de clique)
+    Rectangle btnJogar = { 390, 240, 220, 65 }; 
+    Rectangle btnAjustes = { 390, 315, 220, 65 }; // Centralizado sobre o botão verde da imagem
+    
+    // Elementos internos da tela de Ajustes
+    Rectangle btnVoltar = { 390, 460, 220, 55 };
+    Rectangle btnToggleSom = { 550, 165, 130, 40 };
+    Rectangle barraVolume = { 480, 235, 200, 12 };
+
+    // Variáveis de controle de som
+    bool somAtivado = true;
+    float somVolume = 0.5f; 
+    bool arrastandoVolume = false;
 
     // JOGO
-    Texture2D mapa = LoadTexture("imagens/mapa.png"); // Fundo axadrezado
+    Texture2D mapa = LoadTexture("imagens/mapa.png"); 
     Texture2D mesaLimpa = LoadTexture("imagens/mesa.png");
     Texture2D mesaSuja = LoadTexture("imagens/mesasuja.png");
     
@@ -45,16 +56,12 @@ int main(){
     Restaurante restaurante;
     inicializarRestaurante(&restaurante);
 
-    // ==============================================
-    // NOVA ESTRUTURA MAPA (Apenas 3 Mesas, Y=470 no chão)
-    // ==============================================
-    // Espaçamento X agressivo para preencher a largura: Mesas em 120, 300, 480.
     adicionarPosicao(&restaurante, criarNoMesa(1, 120, 470));
     adicionarPosicao(&restaurante, criarCaminho(210, 470));
     adicionarPosicao(&restaurante, criarNoMesa(2, 300, 470));
     adicionarPosicao(&restaurante, criarCaminho(390, 470));
     adicionarPosicao(&restaurante, criarNoMesa(3, 480, 470));
-    adicionarPosicao(&restaurante, criarCaminho(680, 470)); // Grande gap para a cozinha
+    adicionarPosicao(&restaurante, criarCaminho(680, 470)); 
     adicionarPosicao(&restaurante, criarCozinha(880, 470));
 
     FilaCozinha cozinha;
@@ -66,28 +73,63 @@ int main(){
     inicializarGarcom(&garcom, &restaurante);
 
     float tempoAtualizacao = 0;
-    
-    Mesa *mesasOrdenadas[3]; // Apenas 3 mesas agora
+    Mesa *mesasOrdenadas[3]; 
     int totalEsperando = 0;
+
+    // Volume inicial configurado a 50%
+    SetMasterVolume(somVolume);
 
     while(!WindowShouldClose()){
         float dt = GetFrameTime();
         Vector2 mousePos = GetMousePosition();
 
         if(estadoAtual == ESTADO_MENU) {
-            // Lógica do botão jogar restaurada
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
                 if(CheckCollisionPointRec(mousePos, btnJogar)){
                     estadoAtual = ESTADO_JOGANDO;
                 }
+                // Clique do botão de ajustes detectado
+                else if(CheckCollisionPointRec(mousePos, btnAjustes)){
+                    estadoAtual = ESTADO_AJUSTES;
+                }
+            }
+        }
+        else if (estadoAtual == ESTADO_AJUSTES) {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+                // Voltar para o menu principal
+                if (CheckCollisionPointRec(mousePos, btnVoltar)) {
+                    estadoAtual = ESTADO_MENU;
+                }
+                // Ativar/Desativar som do Master
+                if (CheckCollisionPointRec(mousePos, btnToggleSom)) {
+                    somAtivado = !somAtivado;
+                    SetMasterVolume(somAtivado ? somVolume : 0.0f);
+                }
+                
+                // Verifica colisão com a barra para arrastar volume
+                Rectangle handleVolume = { barraVolume.x + (somVolume * barraVolume.width) - 8, barraVolume.y - 4, 16, 20 };
+                if (CheckCollisionPointRec(mousePos, handleVolume) || CheckCollisionPointRec(mousePos, barraVolume)) {
+                    arrastandoVolume = true;
+                }
+            }
+            
+            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                arrastandoVolume = false;
+            }
+            
+            // Lógica de arrasto deslizante para o Slider
+            if (arrastandoVolume) {
+                somVolume = (mousePos.x - barraVolume.x) / barraVolume.width;
+                if (somVolume < 0.0f) somVolume = 0.0f;
+                if (somVolume > 1.0f) somVolume = 1.0f;
+                
+                if (somAtivado) SetMasterVolume(somVolume);
             }
         }
         else if (estadoAtual == ESTADO_JOGANDO) {
-            
             atualizarMovimentoGarcom(&garcom, dt);
             atualizarFisicaClientes(restaurante.inicio, dt);
 
-            // INPUTS
             if (IsKeyPressed(KEY_Q) && garcom.pratoAtual != NULL) {
                 free(garcom.pratoAtual);
                 garcom.pratoAtual = NULL;
@@ -120,12 +162,10 @@ int main(){
                 }
             }
 
-            // ATUALIZA LÓGICA TEMPORAL E URGÊNCIA (1 segundo)
             tempoAtualizacao += dt;
             if(tempoAtualizacao >= 1.0f){
                 atualizarClientes(restaurante.inicio);
                 
-                // LÓGICA DE URGÊNCIA RESTAURADA
                 totalEsperando = 0;
                 NoLista *percorre = restaurante.inicio;
                 while (percorre != NULL) {
@@ -144,15 +184,13 @@ int main(){
         }
 
         // ==============================================
-        // DESENHO (RENDERIZAÇÃO CORRIGIDA)
+        // DESENHO (RENDERIZAÇÃO)
         // ==============================================
         BeginDrawing();
         ClearBackground(BEIGE);
 
         if (estadoAtual == ESTADO_MENU) {
-            // Desenha a imagem de fundo esticada para preencher a tela de 1000x600
-            // CORREÇÃO: Garante que o menu cobre a tela bege se der erro de carga
-            if (fundoMenu.id != 0) { // Se carregou
+            if (fundoMenu.id != 0) { 
                 DrawTexturePro(fundoMenu, 
                     (Rectangle){ 0, 0, (float)fundoMenu.width, (float)fundoMenu.height },
                     (Rectangle){ 0, 0, 1000, 600 },
@@ -163,10 +201,72 @@ int main(){
                 DrawText("JOGAR (Fallback)", 415, 235, 20, BLACK);
             }
 
-            // Feedback visual no botão JOGAR da lógica original
+            // Feedback Visual de Hover nos botões da imagem usando o estilo retrô
             if(CheckCollisionPointRec(mousePos, btnJogar)) {
                 DrawRectangleLinesEx(btnJogar, 4, GREEN);
             }
+            if(CheckCollisionPointRec(mousePos, btnAjustes)) {
+                DrawRectangleLinesEx(btnAjustes, 4, ORANGE);
+            }
+        }
+        else if (estadoAtual == ESTADO_AJUSTES) {
+            // Mantém a imagem de fundo do restaurante atrás da janela de configurações
+            if (fundoMenu.id != 0) {
+                DrawTexturePro(fundoMenu, 
+                    (Rectangle){ 0, 0, (float)fundoMenu.width, (float)fundoMenu.height },
+                    (Rectangle){ 0, 0, 1000, 600 },
+                    (Vector2){ 0, 0 }, 0.0f, WHITE);
+            }
+            
+            // Painel central semi-transparente simulando caixa escura medieval/retrô
+            DrawRectangle(220, 50, 560, 490, Fade(BLACK, 0.88f));
+            DrawRectangleLinesEx((Rectangle){ 220, 50, 560, 490 }, 5, MAROON); // Bordas imitando madeira escura
+
+            DrawText("AJUSTES", 435, 75, 34, GOLD);
+
+            // --- SEÇÃO DE AUDIO ---
+            DrawText("ÁUDIO GERAL", 270, 130, 18, GOLD);
+            DrawLine(270, 150, 730, 150, GRAY);
+
+            DrawText("Efeitos & Sons:", 270, 172, 20, WHITE);
+            
+            // Botão Alternador LIGADO/DESLIGADO
+            DrawRectangleRec(btnToggleSom, somAtivado ? DARKGREEN : RED);
+            DrawRectangleLinesEx(btnToggleSom, 2, WHITE);
+            DrawText(somAtivado ? "ATIVADO" : "MUTADO", btnToggleSom.x + (somAtivado ? 22 : 28), btnToggleSom.y + 10, 18, WHITE);
+
+            // Slider de Volume
+            DrawText("Volume:", 270, 230, 20, WHITE);
+            DrawRectangleRec(barraVolume, DARKGRAY); // Fundo da trilha
+            DrawRectangle(barraVolume.x, barraVolume.y, somVolume * barraVolume.width, barraVolume.height, ORANGE); // Preenchimento
+            
+            // Seletor (Cursor do Slider)
+            DrawRectangle(barraVolume.x + (somVolume * barraVolume.width) - 8, barraVolume.y - 4, 16, 20, GOLD);
+            DrawRectangleLinesEx((Rectangle){ barraVolume.x + (somVolume * barraVolume.width) - 8, barraVolume.y - 4, 16, 20 }, 2, WHITE);
+            DrawText(TextFormat("%d%%", (int)(somVolume * 100)), barraVolume.x + barraVolume.width + 15, barraVolume.y - 4, 18, WHITE);
+
+            // --- SEÇÃO DE CONTROLES ---
+            DrawText("CONTROLES DO JOGO", 270, 300, 18, GOLD);
+            DrawLine(270, 320, 730, 320, GRAY);
+
+            int baseTxtY = 340;
+            DrawText("- A / D ou SETAS:", 270, baseTxtY, 17, ORANGE);
+            DrawText("Movimenta o Garçom", 450, baseTxtY, 17, LIGHTGRAY);
+            
+            DrawText("- ESPAÇO:", 270, baseTxtY + 25, 17, ORANGE);
+            DrawText("Interagir (Pegar / Entregar / Limpar)", 450, baseTxtY + 25, 17, LIGHTGRAY);
+            
+            DrawText("- TECLA Q:", 270, baseTxtY + 50, 17, ORANGE);
+            DrawText("Descarta o prato atual na lixeira", 450, baseTxtY + 50, 17, LIGHTGRAY);
+
+            DrawText("- TECLAS 1 a 5:", 270, baseTxtY + 75, 17, ORANGE);
+            DrawText("Seleciona o prato desejado na Cozinha", 450, baseTxtY + 75, 17, LIGHTGRAY);
+
+            // --- BOTÃO VOLTAR ---
+            bool hoverVoltar = CheckCollisionPointRec(mousePos, btnVoltar);
+            DrawRectangleRec(btnVoltar, hoverVoltar ? DARKGREEN : MAROON);
+            DrawRectangleLinesEx(btnVoltar, 3, GOLD);
+            DrawText("VOLTAR", btnVoltar.x + 65, btnVoltar.y + 15, 22, WHITE);
         }
         else if (estadoAtual == ESTADO_FALENCIA) {
             DrawRectangle(0, 0, 1000, 600, RED);
@@ -174,8 +274,6 @@ int main(){
             DrawText("O restaurante fechou as portas.", 320, 300, 24, WHITE);
         }
         else if (estadoAtual == ESTADO_JOGANDO) {
-            
-            // MAPA ESTICADO PARA PREENCHER TELA INTEIRA (Elimina borda bege)
             DrawTexturePro(mapa, 
                 (Rectangle){ 0, 0, (float)mapa.width, (float)mapa.height },
                 (Rectangle){ 0, 0, 1000, 600 },
@@ -183,19 +281,14 @@ int main(){
                 
             DrawText(TextFormat("Pontuacao: %d", pontuacao), 20, 20, 25, BLACK);
 
-            // 1. Renderiza Mesas com tamanho proporcional calculado
             NoLista *aux = restaurante.inicio;
             while(aux != NULL){
                 if(aux->tipo == MESA){
                     Texture2D tex = (aux->mesa->status == SUJA) ? mesaSuja : mesaLimpa;
-                    
-                    // CORREÇÃO DE TAMANHO: Calcula largura proporcional à altura desejada
                     float ratio = (float)tex.width / (float)tex.height;
                     float destWidth = ALTURA_MESA * ratio;
-                    
                     Rectangle destRec = { (float)aux->posX, (float)aux->posY, destWidth, ALTURA_MESA };
-                    Vector2 origin = { destWidth / 2.0f, ALTURA_MESA }; // Origem base no chão
-                    
+                    Vector2 origin = { destWidth / 2.0f, ALTURA_MESA }; 
                     DrawTexturePro(tex, (Rectangle){ 0, 0, (float)tex.width, (float)tex.height }, destRec, origin, 0.0f, WHITE);
                 }
                 else if(aux->tipo == COZINHA){
@@ -204,7 +297,6 @@ int main(){
                 aux = aux->proximo;
             }
 
-            // 2. Renderiza Clientes com proporção original (Fim do esticamento)
             aux = restaurante.inicio;
             while(aux != NULL){
                 if(aux->tipo == MESA && aux->mesa->cliente != NULL){
@@ -216,20 +308,15 @@ int main(){
                     if(posC == aux) texCli = clientesSit[id];
                     else texCli = (posC->tipo == CAMINHO) ? clientesWalk[id] : clientesIdle[id];
 
-                    // CORREÇÃO DE PROPORÇÃO: Fim do esticamento
                     float ratio = (float)texCli.width / (float)texCli.height;
                     float destWidth = ALTURA_PERSONAGEM * ratio;
-                    
                     Rectangle destRec = { (float)posC->posX, (float)posC->posY, destWidth, ALTURA_PERSONAGEM };
-                    // Origem no centro inferior (pés)
                     Vector2 origin = { destWidth / 2.0f, ALTURA_PERSONAGEM }; 
                     
-                    // CORREÇÃO SEPARAÇÃO MESA: Empurrar mais para a cadeira (esquerda)
-                    if(posC == aux) destRec.x -= 45.0f; // Aumentado separation
+                    if(posC == aux) destRec.x -= 45.0f; 
 
                     DrawTexturePro(texCli, (Rectangle){ 0, 0, (float)texCli.width, (float)texCli.height }, destRec, origin, 0.0f, WHITE);
 
-                    // UI do Cliente Sentado
                     if(posC == aux) {
                         DrawText(c->pratoDesejado.nome, posC->posX - 60, posC->posY - 125, 16, BLACK);
                         DrawText(TextFormat("Pac: %d", c->paciencia), posC->posX - 60, posC->posY - 110, 16, RED);
@@ -238,7 +325,6 @@ int main(){
                 aux = aux->proximo;
             }
 
-            // 3. Renderiza Garçom PROPORCIONAL
             NoLista *posG = garcom.posicaoAtual;
             Texture2D texGarcom;
             if(garcom.pratoAtual != NULL) texGarcom = (garcom.timerTransicao > 0) ? prot_ap : prot_pp;
@@ -246,13 +332,10 @@ int main(){
 
             float ratioG = (float)texGarcom.width / (float)texGarcom.height;
             float destWidthG = ALTURA_PERSONAGEM * ratioG;
-            
             Rectangle destRecG = { (float)posG->posX, (float)posG->posY, destWidthG, ALTURA_PERSONAGEM };
-            Vector2 originG = { destWidthG / 2.0f, ALTURA_PERSONAGEM }; // Pés no chão
-            
+            Vector2 originG = { destWidthG / 2.0f, ALTURA_PERSONAGEM }; 
             DrawTexturePro(texGarcom, (Rectangle){ 0, 0, (float)texGarcom.width, (float)texGarcom.height }, destRecG, originG, 0.0f, WHITE);
 
-            // Garçom e Cozinha UI
             if(garcom.pratoAtual != NULL) DrawText(TextFormat("Mão: %s", garcom.pratoAtual->nome), 20, 50, 20, DARKBLUE);
             if (escolhendoPrato) {
                 DrawRectangle(250, 120, 500, 320, Fade(BLACK, 0.85f));
@@ -260,7 +343,6 @@ int main(){
                 for (int i = 0; i < 5; i++) DrawText(TextFormat("[%d] - %s", i + 1, cardapio[i]), 350, 180 + (i * 35), 20, WHITE);
             }
 
-            // 4. LISTA DE URGÊNCIA (QUICKSORT) RESTAURADA
             int painelX = 780;
             DrawRectangle(painelX, 20, 200, 150, Fade(BLACK, 0.7f));
             DrawRectangleLines(painelX, 20, 200, 150, WHITE);
@@ -289,6 +371,8 @@ int main(){
     UnloadTexture(fundoMenu); UnloadTexture(mapa); UnloadTexture(mesaLimpa); UnloadTexture(mesaSuja);
     UnloadTexture(prot_p); UnloadTexture(prot_a); UnloadTexture(prot_pp); UnloadTexture(prot_ap);
     for(int i=0; i<3; i++){ UnloadTexture(clientesWalk[i]); UnloadTexture(clientesIdle[i]); UnloadTexture(clientesSit[i]); }
+    
+    CloseAudioDevice(); // Encerra o dispositivo de som corretamente antes de fechar
     CloseWindow();
     return 0;
 }
