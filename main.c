@@ -8,8 +8,8 @@
 
 typedef enum { ESTADO_MENU, ESTADO_JOGANDO, ESTADO_FALENCIA, ESTADO_AJUSTES, ESTADO_CREDITOS } EstadoJogo;
 
-const float ALTURA_MESA = 90.0f; 
-const float ALTURA_PERSONAGEM = 85.0f; 
+const float ALTURA_MESA = 150.0f; 
+const float ALTURA_PERSONAGEM = 135.0f; 
 
 int main(){
     srand(time(NULL));
@@ -27,8 +27,8 @@ int main(){
     Texture2D fundoMenu = LoadTexture("imagens/Telainicio.png"); 
     
     Rectangle btnJogar   = { 390, 240, 220, 65 }; 
-    Rectangle btnAjustes = { 390, 315, 220, 65 }; 
-    Rectangle btnCreditos= { 390, 390, 220, 65 };
+    Rectangle btnAjustes = { 400, 335, 200, 63 }; 
+    Rectangle btnCreditos= { 400, 422, 200, 63 };
     
     Rectangle btnVoltar      = { 390, 460, 220, 55 };
     Rectangle btnToggleSom   = { 550, 165, 130, 40 };
@@ -56,13 +56,13 @@ int main(){
     Restaurante restaurante;
     inicializarRestaurante(&restaurante);
 
-    adicionarPosicao(&restaurante, criarNoMesa(1, 120, 470));
-    adicionarPosicao(&restaurante, criarCaminho(210, 470));
-    adicionarPosicao(&restaurante, criarNoMesa(2, 300, 470));
-    adicionarPosicao(&restaurante, criarCaminho(390, 470));
-    adicionarPosicao(&restaurante, criarNoMesa(3, 480, 470));
-    adicionarPosicao(&restaurante, criarCaminho(680, 470)); 
-    adicionarPosicao(&restaurante, criarCozinha(880, 470));
+    adicionarPosicao(&restaurante, criarNoMesa(1, 100, 480));
+    adicionarPosicao(&restaurante, criarCaminho(205, 450));
+    adicionarPosicao(&restaurante, criarNoMesa(2, 310, 480));
+    adicionarPosicao(&restaurante, criarCaminho(415, 450));
+    adicionarPosicao(&restaurante, criarNoMesa(3, 520, 480));
+    adicionarPosicao(&restaurante, criarCaminho(700, 450)); 
+    adicionarPosicao(&restaurante, criarCozinha(880, 450));
 
     FilaCozinha cozinha;
     inicializarFila(&cozinha);
@@ -246,11 +246,11 @@ int main(){
                 DrawText("EQUIPE DE DESENVOLVIMENTO", 270, 140, 18, GOLD);
                 DrawLine(270, 160, 730, 160, GRAY);
                 int y = 190;
-                DrawText("• Julio Cesar Coutinho Holanda Cavalcanti", 270, y,        18, WHITE);
-                DrawText("• João Luiz de Lima Bacelar",                270, y + 35,  18, WHITE);
-                DrawText("• Rodrigo Vinhas Marques",                   270, y + 70,  18, WHITE);
-                DrawText("• Breno Pereira de Oliveira Lima",           270, y + 105, 18, WHITE);
-                DrawText("• João Carlos Vasconcelos de Gusmão",        270, y + 140, 18, WHITE);
+                DrawText("- Julio Cesar Coutinho Holanda Cavalcanti", 270, y,        18, WHITE);
+                DrawText("- João Luiz de Lima Bacelar",                270, y + 35,  18, WHITE);
+                DrawText("- Rodrigo Vinhas Marques",                   270, y + 70,  18, WHITE);
+                DrawText("- Breno Pereira de Oliveira Lima",           270, y + 105, 18, WHITE);
+                DrawText("- João Carlos Vasconcelos de Gusmão",        270, y + 140, 18, WHITE);
                 DrawText("CESAR SCHOOL - 2026", 400, 420, 18, ORANGE);
             }
 
@@ -287,6 +287,9 @@ int main(){
                 aux = aux->proximo;
             }
 
+            // ==============================================
+            // RENDERIZAÇÃO DOS CLIENTES
+            // ==============================================
             aux = restaurante.inicio;
             while(aux != NULL){
                 if(aux->tipo == MESA && aux->mesa->cliente != NULL){
@@ -296,12 +299,42 @@ int main(){
                     Texture2D texCli;
                     if(posC == aux) texCli = clientesSit[id];
                     else texCli = (posC->tipo == CAMINHO) ? clientesWalk[id] : clientesIdle[id];
-                    float ratio = (float)texCli.width / (float)texCli.height;
-                    float destWidth = ALTURA_PERSONAGEM * ratio;
-                    Rectangle destRec = { (float)posC->posX, (float)posC->posY, destWidth, ALTURA_PERSONAGEM };
-                    Vector2 origin = { destWidth / 2.0f, ALTURA_PERSONAGEM }; 
-                    if(posC == aux) destRec.x -= 45.0f; 
+                    
+                    // -------------------------------------------------------------
+                    // VARIÁVEIS DE CONFIGURAÇÃO DOS CLIENTES (Altere aqui livremente)
+                    // -------------------------------------------------------------
+                    float LARGURA_CLIENTE = 65.0f;  // Controla a grossura/largura
+                    float ALTURA_CLIENTE  = 130.0f; // Controla a altura
+                    float offsetGeralX    = 0.0f;   // Move o cliente horizontalmente
+                    float offsetGeralY    = 0.0f;   // Move o cliente verticalmente (ex: alinhar ao chão)
+                    
+                    Rectangle destRec = { 
+                        (float)posC->posX + offsetGeralX, 
+                        (float)posC->posY + offsetGeralY, 
+                        LARGURA_CLIENTE, 
+                        ALTURA_CLIENTE 
+                    };
+                    
+                    Vector2 origin = { LARGURA_CLIENTE / 2.0f, ALTURA_CLIENTE }; 
+                    
+                    if(posC == aux) {
+                        // Afastamento horizontal em relação ao centro da mesa ao sentar
+                        destRec.x -= 45.0f;
+                        destRec.y += -30.0f;
+                        
+                        // Exemplo: caso queira subir/descer o cliente apenas quando sentado, altere aqui:
+                        // destRec.y += 0.0f; 
+                    }
+                    else if (posC->tipo == CAMINHO) {
+                        destRec.y += 0.0f;
+                    }
+                    else{
+                        destRec.y -= 30.0f;
+                    }
+                    // -------------------------------------------------------------
+                    
                     DrawTexturePro(texCli, (Rectangle){ 0, 0, (float)texCli.width, (float)texCli.height }, destRec, origin, 0.0f, WHITE);
+                    
                     if(posC == aux) {
                         DrawText(c->pratoDesejado.nome, posC->posX - 60, posC->posY - 125, 16, BLACK);
                         DrawText(TextFormat("Pac: %d", c->paciencia), posC->posX - 60, posC->posY - 110, 16, RED);
@@ -310,13 +343,18 @@ int main(){
                 aux = aux->proximo;
             }
 
+            // ==============================================
+            // RENDERIZAÇÃO DO GARÇOM (PROTAGONISTA)
+            // ==============================================
             NoLista *posG = garcom.posicaoAtual;
             Texture2D texGarcom;
             if(garcom.pratoAtual != NULL) texGarcom = (garcom.timerTransicao > 0) ? prot_ap : prot_pp;
             else texGarcom = (garcom.timerTransicao > 0) ? prot_a : prot_p;
             float ratioG = (float)texGarcom.width / (float)texGarcom.height;
             float destWidthG = ALTURA_PERSONAGEM * ratioG;
-            Rectangle destRecG = { (float)posG->posX, (float)posG->posY, destWidthG, ALTURA_PERSONAGEM };
+            
+            // Posição Y forçada fixamente em 450.0f para manter o alinhamento correto dos pés ao andar ou parar nas mesas
+            Rectangle destRecG = { (float)posG->posX, 450.0f, destWidthG, ALTURA_PERSONAGEM };
             Vector2 originG = { destWidthG / 2.0f, ALTURA_PERSONAGEM }; 
             DrawTexturePro(texGarcom, (Rectangle){ 0, 0, (float)texGarcom.width, (float)texGarcom.height }, destRecG, originG, 0.0f, WHITE);
 
@@ -352,7 +390,7 @@ int main(){
         // ESCALA DO CANVAS PARA A TELA CHEIA
         // ==============================================
         BeginDrawing();
-        ClearBackground(BLACK); // Barras pretas nas bordas se necessário
+        ClearBackground(BLACK); 
         DrawTexturePro(
             alvo.texture,
             (Rectangle){ 0, 0, 1000, -600 },   // -600 corrige o flip vertical do RenderTexture
