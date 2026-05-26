@@ -200,8 +200,11 @@ O objetivo do jogo é entregar o máximo possível de pedidos corretamente antes
 ---
 
 # 👨‍💻 Desenvolvedores
-
-(Adicionar integrantes aqui)
+Breno Pereira de Oliveira Lima
+João Carlos Vasconcelos de Gusmão
+João Luiz de Lima Bacelar
+Julio Cesar COutinho Holanda Cavalcanti
+Rodrigo Vinhas Marques
 
 ---
 
