@@ -154,3 +154,18 @@ void quickSortClientes(Mesa **mesas, int inicio, int fim) {
     quickSortClientes(mesas, inicio, posicaoPivo - 1);
     quickSortClientes(mesas, posicaoPivo + 1, fim);
 }
+void exibirFilaDeEspera(Mesa **mesas, int total) {
+    printf("\n=== FILA DE ESPERA (mais urgente primeiro) ===\n");
+    if (total == 0) {
+        printf("Nenhum cliente esperando.\n");
+        return;
+    }
+    for (int i = 0; i < total; i++) {
+        printf("#%d | Mesa %d | Pedido: %s | Paciencia: %d\n",
+               i + 1,
+               mesas[i]->numero,
+               mesas[i]->cliente->pratoDesejado.nome,
+               mesas[i]->cliente->paciencia);
+    }
+    printf("=============================================\n");
+}
