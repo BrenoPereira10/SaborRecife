@@ -4,9 +4,9 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
-// Adicionado o ESTADO_AJUSTES na máquina de estados
-typedef enum { ESTADO_MENU, ESTADO_JOGANDO, ESTADO_FALENCIA, ESTADO_AJUSTES } EstadoJogo;
+typedef enum { ESTADO_MENU, ESTADO_JOGANDO, ESTADO_FALENCIA, ESTADO_AJUSTES, ESTADO_CREDITOS } EstadoJogo;
 
 const float ALTURA_MESA = 90.0f; 
 const float ALTURA_PERSONAGEM = 85.0f; 
@@ -15,35 +15,35 @@ int main(){
     srand(time(NULL));
     
     InitWindow(1000, 600, "Sabor Recife - Versao Corrigida 2.0");
-    InitAudioDevice(); // Habilita o sistema de som da Raylib
+    InitAudioDevice();
     SetTargetFPS(60);
+
+    // Canvas interno fixo em 1000x600
+    RenderTexture2D alvo = LoadRenderTexture(1000, 600);
 
     // ==============================================
     // CARREGAMENTO DE TEXTURAS
     // ==============================================
     Texture2D fundoMenu = LoadTexture("imagens/Telainicio.png"); 
     
-    // Alinhamento exato com a imagem do menu original (retângulos invisíveis de clique)
-    Rectangle btnJogar = { 390, 240, 220, 65 }; 
-    Rectangle btnAjustes = { 390, 315, 220, 65 }; // Centralizado sobre o botão verde da imagem
+    Rectangle btnJogar   = { 390, 240, 220, 65 }; 
+    Rectangle btnAjustes = { 390, 315, 220, 65 }; 
+    Rectangle btnCreditos= { 390, 390, 220, 65 };
     
-    // Elementos internos da tela de Ajustes
-    Rectangle btnVoltar = { 390, 460, 220, 55 };
-    Rectangle btnToggleSom = { 550, 165, 130, 40 };
-    Rectangle barraVolume = { 480, 235, 200, 12 };
+    Rectangle btnVoltar      = { 390, 460, 220, 55 };
+    Rectangle btnToggleSom   = { 550, 165, 130, 40 };
+    Rectangle barraVolume    = { 480, 235, 200, 12 };
 
-    // Variáveis de controle de som
     bool somAtivado = true;
     float somVolume = 0.5f; 
     bool arrastandoVolume = false;
 
-    // JOGO
-    Texture2D mapa = LoadTexture("imagens/mapa.png"); 
-    Texture2D mesaLimpa = LoadTexture("imagens/mesa.png");
+    Texture2D mapa     = LoadTexture("imagens/mapa.png"); 
+    Texture2D mesaLimpa= LoadTexture("imagens/mesa.png");
     Texture2D mesaSuja = LoadTexture("imagens/mesasuja.png");
     
-    Texture2D prot_p = LoadTexture("imagens/protagonistap.png");
-    Texture2D prot_a = LoadTexture("imagens/protagonistaa.png");
+    Texture2D prot_p  = LoadTexture("imagens/protagonistap.png");
+    Texture2D prot_a  = LoadTexture("imagens/protagonistaa.png");
     Texture2D prot_pp = LoadTexture("imagens/protagonistapp.png");
     Texture2D prot_ap = LoadTexture("imagens/protagonistaap.png");
 
@@ -76,55 +76,58 @@ int main(){
     Mesa *mesasOrdenadas[3]; 
     int totalEsperando = 0;
 
-    // Volume inicial configurado a 50%
     SetMasterVolume(somVolume);
 
     while(!WindowShouldClose()){
         float dt = GetFrameTime();
-        Vector2 mousePos = GetMousePosition();
+
+        // Calcula escala e offset para converter mouse -> coordenadas do canvas
+        float escala = fminf((float)GetScreenWidth()/1000.0f, (float)GetScreenHeight()/600.0f);
+        float offsetX = (GetScreenWidth()  - 1000.0f * escala) / 2.0f;
+        float offsetY = (GetScreenHeight() - 600.0f  * escala) / 2.0f;
+
+        Vector2 mouseRaw = GetMousePosition();
+        // Mouse mapeado para o espaço do canvas 1000x600
+        Vector2 mousePos = {
+            (mouseRaw.x - offsetX) / escala,
+            (mouseRaw.y - offsetY) / escala
+        };
 
         if(estadoAtual == ESTADO_MENU) {
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-                if(CheckCollisionPointRec(mousePos, btnJogar)){
+                if(CheckCollisionPointRec(mousePos, btnJogar))
                     estadoAtual = ESTADO_JOGANDO;
-                }
-                // Clique do botão de ajustes detectado
-                else if(CheckCollisionPointRec(mousePos, btnAjustes)){
+                else if(CheckCollisionPointRec(mousePos, btnAjustes))
                     estadoAtual = ESTADO_AJUSTES;
-                }
+                else if(CheckCollisionPointRec(mousePos, btnCreditos))
+                    estadoAtual = ESTADO_CREDITOS;
             }
         }
         else if (estadoAtual == ESTADO_AJUSTES) {
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-                // Voltar para o menu principal
-                if (CheckCollisionPointRec(mousePos, btnVoltar)) {
+                if (CheckCollisionPointRec(mousePos, btnVoltar))
                     estadoAtual = ESTADO_MENU;
-                }
-                // Ativar/Desativar som do Master
                 if (CheckCollisionPointRec(mousePos, btnToggleSom)) {
                     somAtivado = !somAtivado;
                     SetMasterVolume(somAtivado ? somVolume : 0.0f);
                 }
-                
-                // Verifica colisão com a barra para arrastar volume
                 Rectangle handleVolume = { barraVolume.x + (somVolume * barraVolume.width) - 8, barraVolume.y - 4, 16, 20 };
-                if (CheckCollisionPointRec(mousePos, handleVolume) || CheckCollisionPointRec(mousePos, barraVolume)) {
+                if (CheckCollisionPointRec(mousePos, handleVolume) || CheckCollisionPointRec(mousePos, barraVolume))
                     arrastandoVolume = true;
-                }
             }
-            
-            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
                 arrastandoVolume = false;
-            }
-            
-            // Lógica de arrasto deslizante para o Slider
             if (arrastandoVolume) {
                 somVolume = (mousePos.x - barraVolume.x) / barraVolume.width;
                 if (somVolume < 0.0f) somVolume = 0.0f;
                 if (somVolume > 1.0f) somVolume = 1.0f;
-                
                 if (somAtivado) SetMasterVolume(somVolume);
             }
+        }
+        else if (estadoAtual == ESTADO_CREDITOS) {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+                if (CheckCollisionPointRec(mousePos, btnVoltar))
+                    estadoAtual = ESTADO_MENU;
         }
         else if (estadoAtual == ESTADO_JOGANDO) {
             atualizarMovimentoGarcom(&garcom, dt);
@@ -137,22 +140,20 @@ int main(){
 
             if (escolhendoPrato) {
                 int p = -1;
-                if (IsKeyPressed(KEY_ONE)) p = 0;
-                if (IsKeyPressed(KEY_TWO)) p = 1;
+                if (IsKeyPressed(KEY_ONE))   p = 0;
+                if (IsKeyPressed(KEY_TWO))   p = 1;
                 if (IsKeyPressed(KEY_THREE)) p = 2;
-                if (IsKeyPressed(KEY_FOUR)) p = 3;
-                if (IsKeyPressed(KEY_FIVE)) p = 4;
-
+                if (IsKeyPressed(KEY_FOUR))  p = 3;
+                if (IsKeyPressed(KEY_FIVE))  p = 4;
                 if (p != -1) {
                     garcom.pratoAtual = malloc(sizeof(Prato));
                     strcpy(garcom.pratoAtual->nome, cardapio[p]);
                     escolhendoPrato = false;
                 }
                 if (IsKeyPressed(KEY_ESCAPE)) escolhendoPrato = false; 
-            }
-            else {
+            } else {
                 if(IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) irParaDireita(&garcom);
-                if(IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) irParaEsquerda(&garcom);
+                if(IsKeyPressed(KEY_LEFT)  || IsKeyPressed(KEY_A)) irParaEsquerda(&garcom);
                 if(IsKeyPressed(KEY_SPACE)){
                     if (garcom.posicaoAtual->tipo == COZINHA) {
                         if (garcom.pratoAtual == NULL) escolhendoPrato = true;
@@ -165,28 +166,25 @@ int main(){
             tempoAtualizacao += dt;
             if(tempoAtualizacao >= 1.0f){
                 atualizarClientes(restaurante.inicio);
-                
                 totalEsperando = 0;
                 NoLista *percorre = restaurante.inicio;
                 while (percorre != NULL) {
                     if (percorre->tipo == MESA && percorre->mesa->cliente != NULL && 
                         percorre->mesa->cliente->estado == ESPERANDO &&
-                        percorre->mesa->cliente->posicaoAtual == percorre) {
+                        percorre->mesa->cliente->posicaoAtual == percorre)
                         mesasOrdenadas[totalEsperando++] = percorre->mesa;
-                    }
                     percorre = percorre->proximo;
                 }
                 if (totalEsperando > 1) quickSortClientes(mesasOrdenadas, 0, totalEsperando - 1);
-
                 tempoAtualizacao = 0;
                 if(pontuacao <= -30) estadoAtual = ESTADO_FALENCIA; 
             }
         }
 
         // ==============================================
-        // DESENHO (RENDERIZAÇÃO)
+        // DESENHO NO CANVAS INTERNO (1000x600)
         // ==============================================
-        BeginDrawing();
+        BeginTextureMode(alvo);
         ClearBackground(BEIGE);
 
         if (estadoAtual == ESTADO_MENU) {
@@ -200,69 +198,62 @@ int main(){
                 DrawRectangleRec(btnJogar, GREEN);
                 DrawText("JOGAR (Fallback)", 415, 235, 20, BLACK);
             }
-
-            // Feedback Visual de Hover nos botões da imagem usando o estilo retrô
-            if(CheckCollisionPointRec(mousePos, btnJogar)) {
+            if(CheckCollisionPointRec(mousePos, btnJogar))
                 DrawRectangleLinesEx(btnJogar, 4, GREEN);
-            }
-            if(CheckCollisionPointRec(mousePos, btnAjustes)) {
+            if(CheckCollisionPointRec(mousePos, btnAjustes))
                 DrawRectangleLinesEx(btnAjustes, 4, ORANGE);
-            }
+            if(CheckCollisionPointRec(mousePos, btnCreditos))
+                DrawRectangleLinesEx(btnCreditos, 4, GOLD);
         }
-        else if (estadoAtual == ESTADO_AJUSTES) {
-            // Mantém a imagem de fundo do restaurante atrás da janela de configurações
+        else if (estadoAtual == ESTADO_AJUSTES || estadoAtual == ESTADO_CREDITOS) {
             if (fundoMenu.id != 0) {
                 DrawTexturePro(fundoMenu, 
                     (Rectangle){ 0, 0, (float)fundoMenu.width, (float)fundoMenu.height },
                     (Rectangle){ 0, 0, 1000, 600 },
                     (Vector2){ 0, 0 }, 0.0f, WHITE);
             }
-            
-            // Painel central semi-transparente simulando caixa escura medieval/retrô
             DrawRectangle(220, 50, 560, 490, Fade(BLACK, 0.88f));
-            DrawRectangleLinesEx((Rectangle){ 220, 50, 560, 490 }, 5, MAROON); // Bordas imitando madeira escura
+            DrawRectangleLinesEx((Rectangle){ 220, 50, 560, 490 }, 5, MAROON);
 
-            DrawText("AJUSTES", 435, 75, 34, GOLD);
+            if (estadoAtual == ESTADO_AJUSTES) {
+                DrawText("AJUSTES", 435, 75, 34, GOLD);
+                DrawText("ÁUDIO GERAL", 270, 130, 18, GOLD);
+                DrawLine(270, 150, 730, 150, GRAY);
+                DrawText("Efeitos & Sons:", 270, 172, 20, WHITE);
+                DrawRectangleRec(btnToggleSom, somAtivado ? DARKGREEN : RED);
+                DrawRectangleLinesEx(btnToggleSom, 2, WHITE);
+                DrawText(somAtivado ? "ATIVADO" : "MUTADO", btnToggleSom.x + (somAtivado ? 22 : 28), btnToggleSom.y + 10, 18, WHITE);
+                DrawText("Volume:", 270, 230, 20, WHITE);
+                DrawRectangleRec(barraVolume, DARKGRAY);
+                DrawRectangle(barraVolume.x, barraVolume.y, somVolume * barraVolume.width, barraVolume.height, ORANGE);
+                DrawRectangle(barraVolume.x + (somVolume * barraVolume.width) - 8, barraVolume.y - 4, 16, 20, GOLD);
+                DrawRectangleLinesEx((Rectangle){ barraVolume.x + (somVolume * barraVolume.width) - 8, barraVolume.y - 4, 16, 20 }, 2, WHITE);
+                DrawText(TextFormat("%d%%", (int)(somVolume * 100)), barraVolume.x + barraVolume.width + 15, barraVolume.y - 4, 18, WHITE);
+                DrawText("CONTROLES DO JOGO", 270, 300, 18, GOLD);
+                DrawLine(270, 320, 730, 320, GRAY);
+                int baseTxtY = 340;
+                DrawText("- A / D ou SETAS:", 270, baseTxtY, 17, ORANGE);
+                DrawText("Movimenta o Garçom", 450, baseTxtY, 17, LIGHTGRAY);
+                DrawText("- ESPAÇO:", 270, baseTxtY + 25, 17, ORANGE);
+                DrawText("Interagir (Pegar / Entregar / Limpar)", 450, baseTxtY + 25, 17, LIGHTGRAY);
+                DrawText("- TECLA Q:", 270, baseTxtY + 50, 17, ORANGE);
+                DrawText("Descarta o prato atual na lixeira", 450, baseTxtY + 50, 17, LIGHTGRAY);
+                DrawText("- TECLAS 1 a 5:", 270, baseTxtY + 75, 17, ORANGE);
+                DrawText("Seleciona o prato desejado na Cozinha", 450, baseTxtY + 75, 17, LIGHTGRAY);
+            } 
+            else if (estadoAtual == ESTADO_CREDITOS) {
+                DrawText("CRÉDITOS", 415, 75, 34, GOLD);
+                DrawText("EQUIPE DE DESENVOLVIMENTO", 270, 140, 18, GOLD);
+                DrawLine(270, 160, 730, 160, GRAY);
+                int y = 190;
+                DrawText("• Julio Cesar Coutinho Holanda Cavalcanti", 270, y,        18, WHITE);
+                DrawText("• João Luiz de Lima Bacelar",                270, y + 35,  18, WHITE);
+                DrawText("• Rodrigo Vinhas Marques",                   270, y + 70,  18, WHITE);
+                DrawText("• Breno Pereira de Oliveira Lima",           270, y + 105, 18, WHITE);
+                DrawText("• João Carlos Vasconcelos de Gusmão",        270, y + 140, 18, WHITE);
+                DrawText("CESAR SCHOOL - 2026", 400, 420, 18, ORANGE);
+            }
 
-            // --- SEÇÃO DE AUDIO ---
-            DrawText("ÁUDIO GERAL", 270, 130, 18, GOLD);
-            DrawLine(270, 150, 730, 150, GRAY);
-
-            DrawText("Efeitos & Sons:", 270, 172, 20, WHITE);
-            
-            // Botão Alternador LIGADO/DESLIGADO
-            DrawRectangleRec(btnToggleSom, somAtivado ? DARKGREEN : RED);
-            DrawRectangleLinesEx(btnToggleSom, 2, WHITE);
-            DrawText(somAtivado ? "ATIVADO" : "MUTADO", btnToggleSom.x + (somAtivado ? 22 : 28), btnToggleSom.y + 10, 18, WHITE);
-
-            // Slider de Volume
-            DrawText("Volume:", 270, 230, 20, WHITE);
-            DrawRectangleRec(barraVolume, DARKGRAY); // Fundo da trilha
-            DrawRectangle(barraVolume.x, barraVolume.y, somVolume * barraVolume.width, barraVolume.height, ORANGE); // Preenchimento
-            
-            // Seletor (Cursor do Slider)
-            DrawRectangle(barraVolume.x + (somVolume * barraVolume.width) - 8, barraVolume.y - 4, 16, 20, GOLD);
-            DrawRectangleLinesEx((Rectangle){ barraVolume.x + (somVolume * barraVolume.width) - 8, barraVolume.y - 4, 16, 20 }, 2, WHITE);
-            DrawText(TextFormat("%d%%", (int)(somVolume * 100)), barraVolume.x + barraVolume.width + 15, barraVolume.y - 4, 18, WHITE);
-
-            // --- SEÇÃO DE CONTROLES ---
-            DrawText("CONTROLES DO JOGO", 270, 300, 18, GOLD);
-            DrawLine(270, 320, 730, 320, GRAY);
-
-            int baseTxtY = 340;
-            DrawText("- A / D ou SETAS:", 270, baseTxtY, 17, ORANGE);
-            DrawText("Movimenta o Garçom", 450, baseTxtY, 17, LIGHTGRAY);
-            
-            DrawText("- ESPAÇO:", 270, baseTxtY + 25, 17, ORANGE);
-            DrawText("Interagir (Pegar / Entregar / Limpar)", 450, baseTxtY + 25, 17, LIGHTGRAY);
-            
-            DrawText("- TECLA Q:", 270, baseTxtY + 50, 17, ORANGE);
-            DrawText("Descarta o prato atual na lixeira", 450, baseTxtY + 50, 17, LIGHTGRAY);
-
-            DrawText("- TECLAS 1 a 5:", 270, baseTxtY + 75, 17, ORANGE);
-            DrawText("Seleciona o prato desejado na Cozinha", 450, baseTxtY + 75, 17, LIGHTGRAY);
-
-            // --- BOTÃO VOLTAR ---
             bool hoverVoltar = CheckCollisionPointRec(mousePos, btnVoltar);
             DrawRectangleRec(btnVoltar, hoverVoltar ? DARKGREEN : MAROON);
             DrawRectangleLinesEx(btnVoltar, 3, GOLD);
@@ -278,7 +269,6 @@ int main(){
                 (Rectangle){ 0, 0, (float)mapa.width, (float)mapa.height },
                 (Rectangle){ 0, 0, 1000, 600 },
                 (Vector2){ 0, 0 }, 0.0f, WHITE);
-                
             DrawText(TextFormat("Pontuacao: %d", pontuacao), 20, 20, 25, BLACK);
 
             NoLista *aux = restaurante.inicio;
@@ -304,19 +294,14 @@ int main(){
                     NoLista *posC = c->posicaoAtual;
                     int id = c->idSprite;
                     Texture2D texCli;
-
                     if(posC == aux) texCli = clientesSit[id];
                     else texCli = (posC->tipo == CAMINHO) ? clientesWalk[id] : clientesIdle[id];
-
                     float ratio = (float)texCli.width / (float)texCli.height;
                     float destWidth = ALTURA_PERSONAGEM * ratio;
                     Rectangle destRec = { (float)posC->posX, (float)posC->posY, destWidth, ALTURA_PERSONAGEM };
                     Vector2 origin = { destWidth / 2.0f, ALTURA_PERSONAGEM }; 
-                    
                     if(posC == aux) destRec.x -= 45.0f; 
-
                     DrawTexturePro(texCli, (Rectangle){ 0, 0, (float)texCli.width, (float)texCli.height }, destRec, origin, 0.0f, WHITE);
-
                     if(posC == aux) {
                         DrawText(c->pratoDesejado.nome, posC->posX - 60, posC->posY - 125, 16, BLACK);
                         DrawText(TextFormat("Pac: %d", c->paciencia), posC->posX - 60, posC->posY - 110, 16, RED);
@@ -329,7 +314,6 @@ int main(){
             Texture2D texGarcom;
             if(garcom.pratoAtual != NULL) texGarcom = (garcom.timerTransicao > 0) ? prot_ap : prot_pp;
             else texGarcom = (garcom.timerTransicao > 0) ? prot_a : prot_p;
-
             float ratioG = (float)texGarcom.width / (float)texGarcom.height;
             float destWidthG = ALTURA_PERSONAGEM * ratioG;
             Rectangle destRecG = { (float)posG->posX, (float)posG->posY, destWidthG, ALTURA_PERSONAGEM };
@@ -340,39 +324,54 @@ int main(){
             if (escolhendoPrato) {
                 DrawRectangle(250, 120, 500, 320, Fade(BLACK, 0.85f));
                 DrawText("COZINHA: [1-5] para escolher", 300, 140, 22, YELLOW);
-                for (int i = 0; i < 5; i++) DrawText(TextFormat("[%d] - %s", i + 1, cardapio[i]), 350, 180 + (i * 35), 20, WHITE);
+                for (int i = 0; i < 5; i++)
+                    DrawText(TextFormat("[%d] - %s", i + 1, cardapio[i]), 350, 180 + (i * 35), 20, WHITE);
             }
 
             int painelX = 780;
             DrawRectangle(painelX, 20, 200, 150, Fade(BLACK, 0.7f));
             DrawRectangleLines(painelX, 20, 200, 150, WHITE);
             DrawText("URGENCIA", painelX + 50, 30, 18, RED);
-
             if (totalEsperando == 0) {
                 DrawText("Sem pedidos", painelX + 40, 70, 16, LIGHTGRAY);
             } else {
                 for (int k = 0; k < totalEsperando; k++) {
                     Color cor = GREEN;
-                    if (mesasOrdenadas[k]->cliente->paciencia <= 5) cor = RED;
+                    if (mesasOrdenadas[k]->cliente->paciencia <= 5)  cor = RED;
                     else if (mesasOrdenadas[k]->cliente->paciencia <= 10) cor = ORANGE;
-
                     DrawText(TextFormat("M%d | Pac:%d", mesasOrdenadas[k]->numero, mesasOrdenadas[k]->cliente->paciencia),
                              painelX + 15, 60 + k * 30, 17, cor);
                 }
             }
-            
             DrawText("A/D=Mover | ESPACO=Interagir | Q=Lixo", 20, 560, 15, BLACK);
         }
 
+        EndTextureMode();
+
+        // ==============================================
+        // ESCALA DO CANVAS PARA A TELA CHEIA
+        // ==============================================
+        BeginDrawing();
+        ClearBackground(BLACK); // Barras pretas nas bordas se necessário
+        DrawTexturePro(
+            alvo.texture,
+            (Rectangle){ 0, 0, 1000, -600 },   // -600 corrige o flip vertical do RenderTexture
+            (Rectangle){ offsetX, offsetY, 1000.0f * escala, 600.0f * escala },
+            (Vector2){ 0, 0 }, 0.0f, WHITE
+        );
         EndDrawing();
     }
 
     // Limpeza
+    UnloadRenderTexture(alvo);
     UnloadTexture(fundoMenu); UnloadTexture(mapa); UnloadTexture(mesaLimpa); UnloadTexture(mesaSuja);
     UnloadTexture(prot_p); UnloadTexture(prot_a); UnloadTexture(prot_pp); UnloadTexture(prot_ap);
-    for(int i=0; i<3; i++){ UnloadTexture(clientesWalk[i]); UnloadTexture(clientesIdle[i]); UnloadTexture(clientesSit[i]); }
-    
-    CloseAudioDevice(); // Encerra o dispositivo de som corretamente antes de fechar
+    for(int i = 0; i < 3; i++){
+        UnloadTexture(clientesWalk[i]);
+        UnloadTexture(clientesIdle[i]);
+        UnloadTexture(clientesSit[i]);
+    }
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
