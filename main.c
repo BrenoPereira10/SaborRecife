@@ -34,6 +34,12 @@ int main(){
     Rectangle btnToggleSom   = { 550, 165, 130, 40 };
     Rectangle barraVolume    = { 480, 235, 200, 12 };
 
+    Music musicaMenu = LoadMusicStream("sons/menu.ogg");
+    Music musicaJogo = LoadMusicStream("sons/jogo.ogg");
+    musicaMenu.looping = true;
+    musicaJogo.looping = true;
+    PlayMusicStream(musicaMenu);
+
     bool somAtivado = true;
     float somVolume = 0.5f; 
     bool arrastandoVolume = false;
@@ -80,6 +86,8 @@ int main(){
 
     while(!WindowShouldClose()){
         float dt = GetFrameTime();
+        UpdateMusicStream(musicaMenu);
+        UpdateMusicStream(musicaJogo);
 
         // Calcula escala e offset para converter mouse -> coordenadas do canvas
         float escala = fminf((float)GetScreenWidth()/1000.0f, (float)GetScreenHeight()/600.0f);
@@ -95,8 +103,11 @@ int main(){
 
         if(estadoAtual == ESTADO_MENU) {
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
-                if(CheckCollisionPointRec(mousePos, btnJogar))
+                if(CheckCollisionPointRec(mousePos, btnJogar)) {
                     estadoAtual = ESTADO_JOGANDO;
+                    StopMusicStream(musicaMenu);
+                    PlayMusicStream(musicaJogo);
+                }
                 else if(CheckCollisionPointRec(mousePos, btnAjustes))
                     estadoAtual = ESTADO_AJUSTES;
                 else if(CheckCollisionPointRec(mousePos, btnCreditos))
@@ -176,6 +187,7 @@ int main(){
                     percorre = percorre->proximo;
                 }
                 if (totalEsperando > 1) quickSortClientes(mesasOrdenadas, 0, totalEsperando - 1);
+                exibirFilaDeEspera(mesasOrdenadas, totalEsperando);
                 tempoAtualizacao = 0;
                 if(pontuacao <= -30) estadoAtual = ESTADO_FALENCIA; 
             }
@@ -303,10 +315,10 @@ int main(){
                     // -------------------------------------------------------------
                     // VARIÁVEIS DE CONFIGURAÇÃO DOS CLIENTES (Altere aqui livremente)
                     // -------------------------------------------------------------
-                    float LARGURA_CLIENTE = 65.0f;  // Controla a grossura/largura
-                    float ALTURA_CLIENTE  = 130.0f; // Controla a altura
-                    float offsetGeralX    = 0.0f;   // Move o cliente horizontalmente
-                    float offsetGeralY    = 0.0f;   // Move o cliente verticalmente (ex: alinhar ao chão)
+                    float LARGURA_CLIENTE = 65.0f;
+                    float ALTURA_CLIENTE  = 130.0f;
+                    float offsetGeralX    = 0.0f;
+                    float offsetGeralY    = 0.0f;
                     
                     Rectangle destRec = { 
                         (float)posC->posX + offsetGeralX, 
@@ -318,12 +330,8 @@ int main(){
                     Vector2 origin = { LARGURA_CLIENTE / 2.0f, ALTURA_CLIENTE }; 
                     
                     if(posC == aux) {
-                        // Afastamento horizontal em relação ao centro da mesa ao sentar
                         destRec.x -= 45.0f;
                         destRec.y += -30.0f;
-                        
-                        // Exemplo: caso queira subir/descer o cliente apenas quando sentado, altere aqui:
-                        // destRec.y += 0.0f; 
                     }
                     else if (posC->tipo == CAMINHO) {
                         destRec.y += 0.0f;
@@ -401,6 +409,8 @@ int main(){
     }
 
     // Limpeza
+    UnloadMusicStream(musicaMenu);
+    UnloadMusicStream(musicaJogo);
     UnloadRenderTexture(alvo);
     UnloadTexture(fundoMenu); UnloadTexture(mapa); UnloadTexture(mesaLimpa); UnloadTexture(mesaSuja);
     UnloadTexture(prot_p); UnloadTexture(prot_a); UnloadTexture(prot_pp); UnloadTexture(prot_ap);
