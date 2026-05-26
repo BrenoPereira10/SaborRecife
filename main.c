@@ -6,7 +6,8 @@
 #include <string.h>
 #include <math.h>
 
-typedef enum { ESTADO_MENU, ESTADO_JOGANDO, ESTADO_FALENCIA, ESTADO_AJUSTES, ESTADO_CREDITOS } EstadoJogo;
+// Adicionado o estado ESTADO_FIM_DE_JOGO
+typedef enum { ESTADO_MENU, ESTADO_JOGANDO, ESTADO_FALENCIA, ESTADO_AJUSTES, ESTADO_CREDITOS, ESTADO_FIM_DE_JOGO } EstadoJogo;
 
 const float ALTURA_MESA = 150.0f; 
 const float ALTURA_PERSONAGEM = 135.0f; 
@@ -14,7 +15,7 @@ const float ALTURA_PERSONAGEM = 135.0f;
 int main(){
     srand(time(NULL));
     
-    InitWindow(1000, 600, "Sabor Recife - Versao Corrigida 2.0");
+    InitWindow(1000, 600, "Sabor Recife");
     InitAudioDevice();
     SetTargetFPS(60);
 
@@ -43,6 +44,9 @@ int main(){
     bool somAtivado = true;
     float somVolume = 0.5f; 
     bool arrastandoVolume = false;
+
+    // Variável para controlar o tempo restante (1 minuto = 60 segundos)
+    float tempoRestante = 60.0f;
 
     Texture2D mapa     = LoadTexture("imagens/mapa.png"); 
     Texture2D mesaLimpa= LoadTexture("imagens/mesa.png");
@@ -105,6 +109,8 @@ int main(){
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
                 if(CheckCollisionPointRec(mousePos, btnJogar)) {
                     estadoAtual = ESTADO_JOGANDO;
+                    tempoRestante = 60.0f; // Reinicia o timer para 1 minuto
+                    pontuacao = 0;         // Reinicia a pontuação global (garanta que pontuacao é global em restaurante.h)
                     StopMusicStream(musicaMenu);
                     PlayMusicStream(musicaJogo);
                 }
@@ -140,7 +146,23 @@ int main(){
                 if (CheckCollisionPointRec(mousePos, btnVoltar))
                     estadoAtual = ESTADO_MENU;
         }
+        // Lógica para voltar ao menu após Falência ou Fim de Jogo (Tempo Esgotado)
+        else if (estadoAtual == ESTADO_FALENCIA || estadoAtual == ESTADO_FIM_DE_JOGO) {
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(KEY_SPACE)) {
+                estadoAtual = ESTADO_MENU;
+                StopMusicStream(musicaJogo);
+                PlayMusicStream(musicaMenu);
+            }
+        }
         else if (estadoAtual == ESTADO_JOGANDO) {
+            // Diminui o tempo restante a cada frame
+            tempoRestante -= dt;
+            if (tempoRestante <= 0.0f) {
+                tempoRestante = 0.0f;
+                estadoAtual = ESTADO_FIM_DE_JOGO; // Muda para a tela final
+                StopMusicStream(musicaJogo);
+            }
+
             atualizarMovimentoGarcom(&garcom, dt);
             atualizarFisicaClientes(restaurante.inicio, dt);
 
@@ -189,7 +211,12 @@ int main(){
                 if (totalEsperando > 1) quickSortClientes(mesasOrdenadas, 0, totalEsperando - 1);
                 exibirFilaDeEspera(mesasOrdenadas, totalEsperando);
                 tempoAtualizacao = 0;
-                if(pontuacao <= -30) estadoAtual = ESTADO_FALENCIA; 
+                
+                // Condição de falência
+                if(pontuacao <= -30) {
+                    estadoAtual = ESTADO_FALENCIA; 
+                    StopMusicStream(musicaJogo);
+                }
             }
         }
 
@@ -275,13 +302,37 @@ int main(){
             DrawRectangle(0, 0, 1000, 600, RED);
             DrawText("FALÊNCIA!", 350, 220, 60, WHITE);
             DrawText("O restaurante fechou as portas.", 320, 300, 24, WHITE);
+            DrawText("Clique ou Pressione ESPAÇO para voltar ao menu", 250, 460, 20, LIGHTGRAY);
+        }
+        // ==============================================
+        // TELA DE FIM DE JOGO (TEMPO ESGOTADO)
+        // ==============================================
+        else if (estadoAtual == ESTADO_FIM_DE_JOGO) {
+            DrawRectangle(0, 0, 1000, 600, DARKBLUE);
+            DrawText("TEMPO ESGOTADO!", 260, 180, 50, GOLD);
+            DrawText("O expediente acabou!", 370, 250, 24, LIGHTGRAY);
+            DrawText(TextFormat("Pontuação Final: %d", pontuacao), 330, 320, 32, WHITE);
+            DrawText("Clique ou Pressione ESPAÇO para voltar ao menu", 250, 460, 20, GRAY);
         }
         else if (estadoAtual == ESTADO_JOGANDO) {
             DrawTexturePro(mapa, 
                 (Rectangle){ 0, 0, (float)mapa.width, (float)mapa.height },
                 (Rectangle){ 0, 0, 1000, 600 },
                 (Vector2){ 0, 0 }, 0.0f, WHITE);
-            DrawText(TextFormat("Pontuacao: %d", pontuacao), 20, 20, 25, BLACK);
+            
+            // HUD: PONTUAÇÃO E TEMPO (FONTE MAIOR)
+            DrawText(TextFormat("Pontuacao: %d", pontuacao), 22, 22, 40, Fade(BLACK, 0.5f)); 
+            DrawText(TextFormat("Pontuacao: %d", pontuacao), 20, 20, 40, BLACK);
+            
+            // Cálculo e formatação do Cronômetro (Ex: 1:00, 0:45)
+            int minutos = (int)tempoRestante / 60;
+            int segundos = (int)tempoRestante % 60;
+            Color corTempo = (tempoRestante <= 10.0f) ? RED : BLACK;
+            
+            // Truque de Sombra para o tempo
+            DrawText(TextFormat("Tempo: %d:%02d", minutos, segundos), 432, 22, 40, Fade(corTempo, 0.5f));
+            // Texto principal do tempo
+            DrawText(TextFormat("Tempo: %d:%02d", minutos, segundos), 430, 20, 40, corTempo);
 
             NoLista *aux = restaurante.inicio;
             while(aux != NULL){
@@ -313,7 +364,7 @@ int main(){
                     else texCli = (posC->tipo == CAMINHO) ? clientesWalk[id] : clientesIdle[id];
                     
                     // -------------------------------------------------------------
-                    // VARIÁVEIS DE CONFIGURAÇÃO DOS CLIENTES (Altere aqui livremente)
+                    // VARIÁVEIS DE CONFIGURAÇÃO DOS CLIENTES
                     // -------------------------------------------------------------
                     float LARGURA_CLIENTE = 65.0f;
                     float ALTURA_CLIENTE  = 130.0f;
@@ -372,10 +423,9 @@ int main(){
             // Retângulo de origem aplicando o fator multiplicador para o espelhamento
             Rectangle sourceRecG = { 0, 0, (float)texGarcom.width * ultimaDirecaoOlharG, (float)texGarcom.height };
             
-            // CORREÇÃO AQUI: Agora passando 'sourceRecG' corretamente
             DrawTexturePro(texGarcom, sourceRecG, destRecG, originG, 0.0f, WHITE);
 
-            if(garcom.pratoAtual != NULL) DrawText(TextFormat("Mão: %s", garcom.pratoAtual->nome), 20, 50, 20, DARKBLUE);
+            if(garcom.pratoAtual != NULL) DrawText(TextFormat("Mão: %s", garcom.pratoAtual->nome), 20, 70, 20, DARKBLUE);
             if (escolhendoPrato) {
                 DrawRectangle(250, 120, 500, 320, Fade(BLACK, 0.85f));
                 DrawText("COZINHA: [1-5] para escolher", 300, 140, 22, YELLOW);
