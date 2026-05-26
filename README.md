@@ -192,6 +192,20 @@ LIBGL_ALWAYS_SOFTWARE=1 ./sabor_recife
 O objetivo do jogo é entregar o máximo possível de pedidos corretamente antes que os clientes percam a paciência e abandonem o restaurante.
 
 ---
+# 🎮 Controles do Jogo
+
+| Tecla | Função |
+|------|------|
+| `A` / `←` | Mover para esquerda |
+| `D` / `→` | Mover para direita |
+| `ESPAÇO` | Interagir |
+| `ESPAÇO` na cozinha | Pegar comida |
+| `ESPAÇO` na mesa | Entregar prato |
+| `ESPAÇO` em mesa suja | Limpar mesa |
+| `Q` | Descartar item na lixeira |
+| `1 a 5` | Selecionar prato na cozinha |
+
+---
 
 # 📚 Referências
 
