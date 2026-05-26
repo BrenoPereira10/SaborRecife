@@ -358,13 +358,22 @@ int main(){
             Texture2D texGarcom;
             if(garcom.pratoAtual != NULL) texGarcom = (garcom.timerTransicao > 0) ? prot_ap : prot_pp;
             else texGarcom = (garcom.timerTransicao > 0) ? prot_a : prot_p;
+            
+            static int ultimaDirecaoOlharG = 1;
+            if (garcom.direcao != 0) ultimaDirecaoOlharG = garcom.direcao;
+            
             float ratioG = (float)texGarcom.width / (float)texGarcom.height;
             float destWidthG = ALTURA_PERSONAGEM * ratioG;
             
             // Posição Y forçada fixamente em 450.0f para manter o alinhamento correto dos pés ao andar ou parar nas mesas
             Rectangle destRecG = { (float)posG->posX, 450.0f, destWidthG, ALTURA_PERSONAGEM };
             Vector2 originG = { destWidthG / 2.0f, ALTURA_PERSONAGEM }; 
-            DrawTexturePro(texGarcom, (Rectangle){ 0, 0, (float)texGarcom.width, (float)texGarcom.height }, destRecG, originG, 0.0f, WHITE);
+            
+            // Retângulo de origem aplicando o fator multiplicador para o espelhamento
+            Rectangle sourceRecG = { 0, 0, (float)texGarcom.width * ultimaDirecaoOlharG, (float)texGarcom.height };
+            
+            // CORREÇÃO AQUI: Agora passando 'sourceRecG' corretamente
+            DrawTexturePro(texGarcom, sourceRecG, destRecG, originG, 0.0f, WHITE);
 
             if(garcom.pratoAtual != NULL) DrawText(TextFormat("Mão: %s", garcom.pratoAtual->nome), 20, 50, 20, DARKBLUE);
             if (escolhendoPrato) {
