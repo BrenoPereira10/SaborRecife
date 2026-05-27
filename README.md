@@ -20,7 +20,7 @@ Com partidas rápidas e mecânicas simples, o jogo mistura lógica, velocidade e
 
 ## 🎥 Vídeo Demonstrativo
 
-https://youtu.be/Ff6DpmycdMw
+(https://youtu.be/2qRrFNCkfXM)
 
 ---
 
