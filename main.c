@@ -18,7 +18,6 @@ int main(){
     // PERMITE TELA CHEIA E REDIMENSIONAMENTO
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
     InitWindow(1000, 600, "Sabor Recife - Versao Corrigida 2.0");
-    // MaximizeWindow(); // Deixei comentado para abrir em janela normal, mas aceita maximizar no botão
     
     InitAudioDevice();
     SetTargetFPS(60);
@@ -64,6 +63,16 @@ int main(){
     Texture2D clientesWalk[3] = { LoadTexture("imagens/cliente1a.png"), LoadTexture("imagens/cliente2a.png"), LoadTexture("imagens/cliente3a.png") };
     Texture2D clientesIdle[3] = { LoadTexture("imagens/cliente1p.png"), LoadTexture("imagens/cliente2p.png"), LoadTexture("imagens/cliente3p.png") };
     Texture2D clientesSit[3]  = { LoadTexture("imagens/cliente1s.png"), LoadTexture("imagens/cliente2s.png"), LoadTexture("imagens/cliente3s.png") };
+
+    // ==============================================
+    // CARREGAMENTO DOS ÍCONES DOS PRATOS 
+    // ==============================================
+    Texture2D texPratos[5];
+    texPratos[0] = LoadTexture("imagens/tapioca.png");
+    texPratos[1] = LoadTexture("imagens/boloderolo.png");
+    texPratos[2] = LoadTexture("imagens/cuscuz.png");
+    texPratos[3] = LoadTexture("imagens/cartola.png");
+    texPratos[4] = LoadTexture("imagens/caldinho.png");
 
     EstadoJogo estadoAtual = ESTADO_MENU;
 
@@ -113,9 +122,41 @@ int main(){
         if(estadoAtual == ESTADO_MENU) {
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
                 if(CheckCollisionPointRec(mousePos, btnJogar)) {
+                    // ==============================================
+                    // FAXINA COMPLETA PARA A NOVA PARTIDA
+                    // ==============================================
                     estadoAtual = ESTADO_JOGANDO;
                     tempoRestante = 60.0f; // Reinicia o timer para 1 minuto
                     pontuacao = 0;
+                    escolhendoPrato = false;
+
+                    // 1. Limpa o prato da mão do garçom
+                    if (garcom.pratoAtual != NULL) {
+                        free(garcom.pratoAtual);
+                        garcom.pratoAtual = NULL;
+                    }
+
+                    // 2. Limpa os clientes e zera as mesas (status = 0)
+                    NoLista *atual = restaurante.inicio;
+                    while (atual != NULL) {
+                        if (atual->tipo == MESA) {
+                            if (atual->mesa->cliente != NULL) {
+                                free(atual->mesa->cliente);
+                                atual->mesa->cliente = NULL;
+                            }
+                            atual->mesa->status = 0; // Mesa limpinha!
+                        }
+                        atual = atual->proximo;
+                    }
+
+                    // 3. Esvazia a fila da cozinha
+                    while (cozinha.inicio != NULL) {
+                        dequeue(&cozinha);
+                    }
+
+                    // 4. Reposiciona o garçom no ponto inicial
+                    inicializarGarcom(&garcom, &restaurante);
+
                     StopMusicStream(musicaMenu);
                     PlayMusicStream(musicaJogo);
                 }
@@ -153,7 +194,7 @@ int main(){
                     estadoAtual = ESTADO_MENU;
         }
         else if (estadoAtual == ESTADO_FALENCIA || estadoAtual == ESTADO_FIM_DE_JOGO) {
-            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(KEY_SPACE)) {
+            if  (IsKeyPressed(KEY_ENTER)) {
                 estadoAtual = ESTADO_MENU;
                 StopMusicStream(musicaJogo);
                 PlayMusicStream(musicaMenu);
@@ -345,7 +386,7 @@ int main(){
                     DrawTexturePro(tex, (Rectangle){ 0, 0, (float)tex.width, (float)tex.height }, destRec, origin, 0.0f, WHITE);
                     
                     // ==============================================
-                    // MENSAGEM: LIMPE A MESA (Usando o DrawText padrão!)
+                    // MENSAGEM: LIMPE A MESA
                     // ==============================================
                     if (aux->mesa->status == SUJA && aux->mesa->cliente == NULL) {
                         int textoX = (int)(destRec.x - origin.x);
@@ -419,12 +460,30 @@ int main(){
             
             if(garcom.pratoAtual != NULL) DrawText(TextFormat("Mao: %s", garcom.pratoAtual->nome), 20, 70, 20, DARKBLUE);
             
-            // Menu da cozinha com fonte padrão
+            // ==============================================
+            // MENU DA COZINHA (COM FOTOS E AJUSTES DE TAMANHO)
+            // ==============================================
             if (escolhendoPrato) {
                 DrawRectangle(250, 120, 500, 320, Fade(BLACK, 0.85f));
                 DrawText("COZINHA: [1-5] para escolher", 280, 140, 22, YELLOW);
-                for (int i = 0; i < 5; i++)
-                    DrawText(TextFormat("[%d] - %s", i + 1, cardapio[i]), 350, 180 + (i * 35), 20, WHITE);
+                
+                for (int i = 0; i < 5; i++) {
+                    int posY = 180 + (i * 35); 
+                    
+                    // 1. Pega a imagem inteira original
+                    Rectangle origem = { 0, 0, (float)texPratos[i].width, (float)texPratos[i].height };
+                    
+                    // 2. Cria a caixa no tamanho exato que você pediu: largura 40, altura 40
+                    // Coloquei a foto na posição X=315 e subi um pouquinho o Y (posY - 10) para alinhar bem com as letras
+                    Rectangle destino = { 315, posY - 10, 40, 40 }; 
+                    Vector2 centro = { 0, 0 };
+                    
+                    // 3. Desenha a foto
+                    DrawTexturePro(texPratos[i], origem, destino, centro, 0.0f, WHITE);
+                    
+                    // 4. Desenha o texto empurrado lá pro X = 370
+                    DrawText(TextFormat("[%d] - %s", i + 1, cardapio[i]), 370, posY, 20, WHITE);
+                }
             }
 
             int painelX = 780;
@@ -461,7 +520,13 @@ int main(){
         EndDrawing();
     }
 
-    // Limpeza sem referências a fontes fantasmas
+    // ==============================================
+    // LIMPEZA DA MEMÓRIA 
+    // ==============================================
+    for(int i = 0; i < 5; i++) {
+        UnloadTexture(texPratos[i]); 
+    }
+
     UnloadMusicStream(musicaMenu);
     UnloadMusicStream(musicaJogo);
     UnloadRenderTexture(alvo);
