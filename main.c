@@ -15,7 +15,7 @@ int main(){
     srand(time(NULL));
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
-    InitWindow(1000, 600, "Sabor Recife - Versao Corrigida 2.0");
+    InitWindow(1000, 600, "Sabor Recife");
     
     InitAudioDevice();
     SetTargetFPS(60);
