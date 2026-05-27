@@ -15,7 +15,11 @@ const float ALTURA_PERSONAGEM = 135.0f;
 int main(){
     srand(time(NULL));
     
+    // PERMITE TELA CHEIA E REDIMENSIONAMENTO
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
     InitWindow(1000, 600, "Sabor Recife - Versao Corrigida 2.0");
+    // MaximizeWindow(); // Deixei comentado para abrir em janela normal, mas aceita maximizar no botão
+    
     InitAudioDevice();
     SetTargetFPS(60);
 
@@ -56,7 +60,7 @@ int main(){
     Texture2D prot_a  = LoadTexture("imagens/protagonistaa.png");
     Texture2D prot_pp = LoadTexture("imagens/protagonistapp.png");
     Texture2D prot_ap = LoadTexture("imagens/protagonistaap.png");
-
+    
     Texture2D clientesWalk[3] = { LoadTexture("imagens/cliente1a.png"), LoadTexture("imagens/cliente2a.png"), LoadTexture("imagens/cliente3a.png") };
     Texture2D clientesIdle[3] = { LoadTexture("imagens/cliente1p.png"), LoadTexture("imagens/cliente2p.png"), LoadTexture("imagens/cliente3p.png") };
     Texture2D clientesSit[3]  = { LoadTexture("imagens/cliente1s.png"), LoadTexture("imagens/cliente2s.png"), LoadTexture("imagens/cliente3s.png") };
@@ -73,12 +77,12 @@ int main(){
     adicionarPosicao(&restaurante, criarNoMesa(3, 520, 480));
     adicionarPosicao(&restaurante, criarCaminho(700, 450)); 
     adicionarPosicao(&restaurante, criarCozinha(880, 450));
-
+    
     FilaCozinha cozinha;
     inicializarFila(&cozinha);
     char cardapio[5][50] = { "Tapioca", "Bolo de Rolo", "Cuscuz", "Cartola", "Caldinho" };
-    bool escolhendoPrato = false; 
-
+    bool escolhendoPrato = false;
+    
     Garcom garcom;
     inicializarGarcom(&garcom, &restaurante);
 
@@ -92,25 +96,26 @@ int main(){
         float dt = GetFrameTime();
         UpdateMusicStream(musicaMenu);
         UpdateMusicStream(musicaJogo);
-
+        
         // Calcula escala e offset para converter mouse -> coordenadas do canvas
         float escala = fminf((float)GetScreenWidth()/1000.0f, (float)GetScreenHeight()/600.0f);
         float offsetX = (GetScreenWidth()  - 1000.0f * escala) / 2.0f;
         float offsetY = (GetScreenHeight() - 600.0f  * escala) / 2.0f;
 
         Vector2 mouseRaw = GetMousePosition();
+        
         // Mouse mapeado para o espaço do canvas 1000x600
         Vector2 mousePos = {
             (mouseRaw.x - offsetX) / escala,
             (mouseRaw.y - offsetY) / escala
         };
-
+        
         if(estadoAtual == ESTADO_MENU) {
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
                 if(CheckCollisionPointRec(mousePos, btnJogar)) {
                     estadoAtual = ESTADO_JOGANDO;
                     tempoRestante = 60.0f; // Reinicia o timer para 1 minuto
-                    pontuacao = 0;         // Reinicia a pontuação global (garanta que pontuacao é global em restaurante.h)
+                    pontuacao = 0;
                     StopMusicStream(musicaMenu);
                     PlayMusicStream(musicaJogo);
                 }
@@ -134,6 +139,7 @@ int main(){
             }
             if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
                 arrastandoVolume = false;
+                
             if (arrastandoVolume) {
                 somVolume = (mousePos.x - barraVolume.x) / barraVolume.width;
                 if (somVolume < 0.0f) somVolume = 0.0f;
@@ -146,7 +152,6 @@ int main(){
                 if (CheckCollisionPointRec(mousePos, btnVoltar))
                     estadoAtual = ESTADO_MENU;
         }
-        // Lógica para voltar ao menu após Falência ou Fim de Jogo (Tempo Esgotado)
         else if (estadoAtual == ESTADO_FALENCIA || estadoAtual == ESTADO_FIM_DE_JOGO) {
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) || IsKeyPressed(KEY_SPACE)) {
                 estadoAtual = ESTADO_MENU;
@@ -155,11 +160,10 @@ int main(){
             }
         }
         else if (estadoAtual == ESTADO_JOGANDO) {
-            // Diminui o tempo restante a cada frame
             tempoRestante -= dt;
             if (tempoRestante <= 0.0f) {
                 tempoRestante = 0.0f;
-                estadoAtual = ESTADO_FIM_DE_JOGO; // Muda para a tela final
+                estadoAtual = ESTADO_FIM_DE_JOGO; 
                 StopMusicStream(musicaJogo);
             }
 
@@ -178,12 +182,13 @@ int main(){
                 if (IsKeyPressed(KEY_THREE)) p = 2;
                 if (IsKeyPressed(KEY_FOUR))  p = 3;
                 if (IsKeyPressed(KEY_FIVE))  p = 4;
+                
                 if (p != -1) {
                     garcom.pratoAtual = malloc(sizeof(Prato));
                     strcpy(garcom.pratoAtual->nome, cardapio[p]);
                     escolhendoPrato = false;
                 }
-                if (IsKeyPressed(KEY_ESCAPE)) escolhendoPrato = false; 
+                if (IsKeyPressed(KEY_ESCAPE)) escolhendoPrato = false;
             } else {
                 if(IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) irParaDireita(&garcom);
                 if(IsKeyPressed(KEY_LEFT)  || IsKeyPressed(KEY_A)) irParaEsquerda(&garcom);
@@ -205,16 +210,15 @@ int main(){
                     if (percorre->tipo == MESA && percorre->mesa->cliente != NULL && 
                         percorre->mesa->cliente->estado == ESPERANDO &&
                         percorre->mesa->cliente->posicaoAtual == percorre)
-                        mesasOrdenadas[totalEsperando++] = percorre->mesa;
+                         mesasOrdenadas[totalEsperando++] = percorre->mesa;
                     percorre = percorre->proximo;
                 }
                 if (totalEsperando > 1) quickSortClientes(mesasOrdenadas, 0, totalEsperando - 1);
                 exibirFilaDeEspera(mesasOrdenadas, totalEsperando);
                 tempoAtualizacao = 0;
                 
-                // Condição de falência
                 if(pontuacao <= -30) {
-                    estadoAtual = ESTADO_FALENCIA; 
+                    estadoAtual = ESTADO_FALENCIA;
                     StopMusicStream(musicaJogo);
                 }
             }
@@ -316,17 +320,16 @@ int main(){
                 (Rectangle){ 0, 0, (float)mapa.width, (float)mapa.height },
                 (Rectangle){ 0, 0, 1000, 600 },
                 (Vector2){ 0, 0 }, 0.0f, WHITE);
-            
-            // Alteração: HUD Pontuação alterado para a cor vermelha (RED)
-            DrawText(TextFormat("Pontuacao: %d", pontuacao), 22, 22, 40, Fade(RED, 0.5f)); 
+                
+            // HUD Pontuação em VERMELHO
+            DrawText(TextFormat("Pontuacao: %d", pontuacao), 22, 22, 40, Fade(RED, 0.5f));
             DrawText(TextFormat("Pontuacao: %d", pontuacao), 20, 20, 40, RED);
             
-            // Alteração: Configuração do Cronômetro (Apenas números, Azul p/ primeiros 50s, Vermelho p/ últimos 10s)
+            // Cronômetro
             int minutos = (int)tempoRestante / 60;
             int segundos = (int)tempoRestante % 60;
             Color corTempo = (tempoRestante <= 10.0f) ? RED : BLUE;
             
-            // Renderização do Tempo (Sem o prefixo "Tempo: ")
             DrawText(TextFormat("%d:%02d", minutos, segundos), 432, 22, 40, Fade(corTempo, 0.5f));
             DrawText(TextFormat("%d:%02d", minutos, segundos), 430, 20, 40, corTempo);
 
@@ -337,8 +340,19 @@ int main(){
                     float ratio = (float)tex.width / (float)tex.height;
                     float destWidth = ALTURA_MESA * ratio;
                     Rectangle destRec = { (float)aux->posX, (float)aux->posY, destWidth, ALTURA_MESA };
-                    Vector2 origin = { destWidth / 2.0f, ALTURA_MESA }; 
+                    Vector2 origin = { destWidth / 2.0f, ALTURA_MESA };
+                    
                     DrawTexturePro(tex, (Rectangle){ 0, 0, (float)tex.width, (float)tex.height }, destRec, origin, 0.0f, WHITE);
+                    
+                    // ==============================================
+                    // MENSAGEM: LIMPE A MESA (Usando o DrawText padrão!)
+                    // ==============================================
+                    if (aux->mesa->status == SUJA && aux->mesa->cliente == NULL) {
+                        int textoX = (int)(destRec.x - origin.x);
+                        int textoY = (int)(destRec.y - origin.y - 25.0f);
+                        DrawText("LIMPE A MESA!", textoX, textoY, 18, RED);
+                    }
+                    
                 }
                 else if(aux->tipo == COZINHA){
                     DrawText("COZINHA", aux->posX - 35, aux->posY - 110, 18, BLACK);
@@ -361,16 +375,7 @@ int main(){
                     
                     float LARGURA_CLIENTE = 65.0f;
                     float ALTURA_CLIENTE  = 130.0f;
-                    float offsetGeralX    = 0.0f;
-                    float offsetGeralY    = 0.0f;
-                    
-                    Rectangle destRec = { 
-                        (float)posC->posX + offsetGeralX, 
-                        (float)posC->posY + offsetGeralY, 
-                        LARGURA_CLIENTE, 
-                        ALTURA_CLIENTE 
-                    };
-                    
+                    Rectangle destRec = { (float)posC->posX, (float)posC->posY, LARGURA_CLIENTE, ALTURA_CLIENTE };
                     Vector2 origin = { LARGURA_CLIENTE / 2.0f, ALTURA_CLIENTE }; 
                     
                     if(posC == aux) {
@@ -385,11 +390,8 @@ int main(){
                     }
                     
                     DrawTexturePro(texCli, (Rectangle){ 0, 0, (float)texCli.width, (float)texCli.height }, destRec, origin, 0.0f, WHITE);
-                    
                     if(posC == aux) {
-                        // Alteração: O nome do prato foi movido bem acima da cabeça (posY - 150)
                         DrawText(c->pratoDesejado.nome, posC->posX - 60, posC->posY - 200, 16, BLACK);
-                        // Alteração: A paciência acompanha logo abaixo do prato (posY - 135)
                         DrawText(TextFormat("Pac: %d", c->paciencia), posC->posX - 60, posC->posY - 185, 16, RED);
                     }
                 }
@@ -409,17 +411,18 @@ int main(){
             
             float ratioG = (float)texGarcom.width / (float)texGarcom.height;
             float destWidthG = ALTURA_PERSONAGEM * ratioG;
-            
             Rectangle destRecG = { (float)posG->posX, 450.0f, destWidthG, ALTURA_PERSONAGEM };
             Vector2 originG = { destWidthG / 2.0f, ALTURA_PERSONAGEM }; 
-            Rectangle sourceRecG = { 0, 0, (float)texGarcom.width * ultimaDirecaoOlharG, (float)texGarcom.height };
             
+            Rectangle sourceRecG = { 0, 0, (float)texGarcom.width * ultimaDirecaoOlharG, (float)texGarcom.height };
             DrawTexturePro(texGarcom, sourceRecG, destRecG, originG, 0.0f, WHITE);
-
-            if(garcom.pratoAtual != NULL) DrawText(TextFormat("Mão: %s", garcom.pratoAtual->nome), 20, 70, 20, DARKBLUE);
+            
+            if(garcom.pratoAtual != NULL) DrawText(TextFormat("Mao: %s", garcom.pratoAtual->nome), 20, 70, 20, DARKBLUE);
+            
+            // Menu da cozinha com fonte padrão
             if (escolhendoPrato) {
                 DrawRectangle(250, 120, 500, 320, Fade(BLACK, 0.85f));
-                DrawText("COZINHA: [1-5] para escolher", 300, 140, 22, YELLOW);
+                DrawText("COZINHA: [1-5] para escolher", 280, 140, 22, YELLOW);
                 for (int i = 0; i < 5; i++)
                     DrawText(TextFormat("[%d] - %s", i + 1, cardapio[i]), 350, 180 + (i * 35), 20, WHITE);
             }
@@ -439,7 +442,6 @@ int main(){
                              painelX + 15, 60 + k * 30, 17, cor);
                 }
             }
-            // Alteração: O texto de controles no rodapé está em VERMELHO
             DrawText("A/D=Mover | ESPACO=Interagir | Q=Lixo", 20, 560, 15, RED);
         }
 
@@ -452,19 +454,20 @@ int main(){
         ClearBackground(BLACK); 
         DrawTexturePro(
             alvo.texture,
-            (Rectangle){ 0, 0, 1000, -600 },   // -600 corrige o flip vertical do RenderTexture
+            (Rectangle){ 0, 0, 1000, -600 },   
             (Rectangle){ offsetX, offsetY, 1000.0f * escala, 600.0f * escala },
             (Vector2){ 0, 0 }, 0.0f, WHITE
         );
         EndDrawing();
     }
 
-    // Limpeza
+    // Limpeza sem referências a fontes fantasmas
     UnloadMusicStream(musicaMenu);
     UnloadMusicStream(musicaJogo);
     UnloadRenderTexture(alvo);
     UnloadTexture(fundoMenu); UnloadTexture(mapa); UnloadTexture(mesaLimpa); UnloadTexture(mesaSuja);
-    UnloadTexture(prot_p); UnloadTexture(prot_a); UnloadTexture(prot_pp); UnloadTexture(prot_ap);
+    UnloadTexture(prot_p); UnloadTexture(prot_a); UnloadTexture(prot_pp);
+    UnloadTexture(prot_ap);
     for(int i = 0; i < 3; i++){
         UnloadTexture(clientesWalk[i]);
         UnloadTexture(clientesIdle[i]);
