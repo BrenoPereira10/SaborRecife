@@ -6,7 +6,6 @@
 #include <string.h>
 #include <math.h>
 
-// Adicionado o estado ESTADO_FIM_DE_JOGO
 typedef enum { ESTADO_MENU, ESTADO_JOGANDO, ESTADO_FALENCIA, ESTADO_AJUSTES, ESTADO_CREDITOS, ESTADO_FIM_DE_JOGO } EstadoJogo;
 
 const float ALTURA_MESA = 150.0f; 
@@ -14,20 +13,13 @@ const float ALTURA_PERSONAGEM = 135.0f;
 
 int main(){
     srand(time(NULL));
-    
-    // PERMITE TELA CHEIA E REDIMENSIONAMENTO
+
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
     InitWindow(1000, 600, "Sabor Recife - Versao Corrigida 2.0");
     
     InitAudioDevice();
     SetTargetFPS(60);
-
-    // Canvas interno fixo em 1000x600
     RenderTexture2D alvo = LoadRenderTexture(1000, 600);
-
-    // ==============================================
-    // CARREGAMENTO DE TEXTURAS
-    // ==============================================
     Texture2D fundoMenu = LoadTexture("imagens/Telainicio.png"); 
     
     Rectangle btnJogar   = { 390, 240, 220, 65 }; 
@@ -48,7 +40,6 @@ int main(){
     float somVolume = 0.5f; 
     bool arrastandoVolume = false;
 
-    // Variável para controlar o tempo restante (1 minuto = 60 segundos)
     float tempoRestante = 60.0f;
 
     Texture2D mapa     = LoadTexture("imagens/mapa.png"); 
@@ -64,9 +55,6 @@ int main(){
     Texture2D clientesIdle[3] = { LoadTexture("imagens/cliente1p.png"), LoadTexture("imagens/cliente2p.png"), LoadTexture("imagens/cliente3p.png") };
     Texture2D clientesSit[3]  = { LoadTexture("imagens/cliente1s.png"), LoadTexture("imagens/cliente2s.png"), LoadTexture("imagens/cliente3s.png") };
 
-    // ==============================================
-    // CARREGAMENTO DOS ÍCONES DOS PRATOS 
-    // ==============================================
     Texture2D texPratos[5];
     texPratos[0] = LoadTexture("imagens/tapioca.png");
     texPratos[1] = LoadTexture("imagens/boloderolo.png");
@@ -106,14 +94,12 @@ int main(){
         UpdateMusicStream(musicaMenu);
         UpdateMusicStream(musicaJogo);
         
-        // Calcula escala e offset para converter mouse -> coordenadas do canvas
         float escala = fminf((float)GetScreenWidth()/1000.0f, (float)GetScreenHeight()/600.0f);
         float offsetX = (GetScreenWidth()  - 1000.0f * escala) / 2.0f;
         float offsetY = (GetScreenHeight() - 600.0f  * escala) / 2.0f;
 
         Vector2 mouseRaw = GetMousePosition();
         
-        // Mouse mapeado para o espaço do canvas 1000x600
         Vector2 mousePos = {
             (mouseRaw.x - offsetX) / escala,
             (mouseRaw.y - offsetY) / escala
@@ -122,21 +108,16 @@ int main(){
         if(estadoAtual == ESTADO_MENU) {
             if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)){
                 if(CheckCollisionPointRec(mousePos, btnJogar)) {
-                    // ==============================================
-                    // FAXINA COMPLETA PARA A NOVA PARTIDA
-                    // ==============================================
                     estadoAtual = ESTADO_JOGANDO;
-                    tempoRestante = 60.0f; // Reinicia o timer para 1 minuto
+                    tempoRestante = 60.0f; 
                     pontuacao = 0;
                     escolhendoPrato = false;
 
-                    // 1. Limpa o prato da mão do garçom
                     if (garcom.pratoAtual != NULL) {
                         free(garcom.pratoAtual);
                         garcom.pratoAtual = NULL;
                     }
 
-                    // 2. Limpa os clientes e zera as mesas (status = 0)
                     NoLista *atual = restaurante.inicio;
                     while (atual != NULL) {
                         if (atual->tipo == MESA) {
@@ -144,17 +125,16 @@ int main(){
                                 free(atual->mesa->cliente);
                                 atual->mesa->cliente = NULL;
                             }
-                            atual->mesa->status = 0; // Mesa limpinha!
+                            atual->mesa->status = 0; 
                         }
                         atual = atual->proximo;
                     }
 
-                    // 3. Esvazia a fila da cozinha
+
                     while (cozinha.inicio != NULL) {
                         dequeue(&cozinha);
                     }
 
-                    // 4. Reposiciona o garçom no ponto inicial
                     inicializarGarcom(&garcom, &restaurante);
 
                     StopMusicStream(musicaMenu);
@@ -265,9 +245,6 @@ int main(){
             }
         }
 
-        // ==============================================
-        // DESENHO NO CANVAS INTERNO (1000x600)
-        // ==============================================
         BeginTextureMode(alvo);
         ClearBackground(BEIGE);
 
@@ -361,8 +338,7 @@ int main(){
                 (Rectangle){ 0, 0, (float)mapa.width, (float)mapa.height },
                 (Rectangle){ 0, 0, 1000, 600 },
                 (Vector2){ 0, 0 }, 0.0f, WHITE);
-                
-            // HUD Pontuação em VERMELHO
+
             DrawText(TextFormat("Pontuacao: %d", pontuacao), 22, 22, 40, Fade(RED, 0.5f));
             DrawText(TextFormat("Pontuacao: %d", pontuacao), 20, 20, 40, RED);
             
@@ -384,10 +360,7 @@ int main(){
                     Vector2 origin = { destWidth / 2.0f, ALTURA_MESA };
                     
                     DrawTexturePro(tex, (Rectangle){ 0, 0, (float)tex.width, (float)tex.height }, destRec, origin, 0.0f, WHITE);
-                    
-                    // ==============================================
-                    // MENSAGEM: LIMPE A MESA
-                    // ==============================================
+
                     if (aux->mesa->status == SUJA && aux->mesa->cliente == NULL) {
                         int textoX = (int)(destRec.x - origin.x);
                         int textoY = (int)(destRec.y - origin.y - 25.0f);
@@ -401,9 +374,6 @@ int main(){
                 aux = aux->proximo;
             }
 
-            // ==============================================
-            // RENDERIZAÇÃO DOS CLIENTES
-            // ==============================================
             aux = restaurante.inicio;
             while(aux != NULL){
                 if(aux->tipo == MESA && aux->mesa->cliente != NULL){
@@ -439,9 +409,6 @@ int main(){
                 aux = aux->proximo;
             }
 
-            // ==============================================
-            // RENDERIZAÇÃO DO GARÇOM (PROTAGONISTA)
-            // ==============================================
             NoLista *posG = garcom.posicaoAtual;
             Texture2D texGarcom;
             if(garcom.pratoAtual != NULL) texGarcom = (garcom.timerTransicao > 0) ? prot_ap : prot_pp;
@@ -459,29 +426,22 @@ int main(){
             DrawTexturePro(texGarcom, sourceRecG, destRecG, originG, 0.0f, WHITE);
             
             if(garcom.pratoAtual != NULL) DrawText(TextFormat("Mao: %s", garcom.pratoAtual->nome), 20, 70, 20, DARKBLUE);
-            
-            // ==============================================
-            // MENU DA COZINHA (COM FOTOS E AJUSTES DE TAMANHO)
-            // ==============================================
+
             if (escolhendoPrato) {
                 DrawRectangle(250, 120, 500, 320, Fade(BLACK, 0.85f));
                 DrawText("COZINHA: [1-5] para escolher", 280, 140, 22, YELLOW);
                 
                 for (int i = 0; i < 5; i++) {
                     int posY = 180 + (i * 35); 
-                    
-                    // 1. Pega a imagem inteira original
+      
                     Rectangle origem = { 0, 0, (float)texPratos[i].width, (float)texPratos[i].height };
+
                     
-                    // 2. Cria a caixa no tamanho exato que você pediu: largura 40, altura 40
-                    // Coloquei a foto na posição X=315 e subi um pouquinho o Y (posY - 10) para alinhar bem com as letras
                     Rectangle destino = { 315, posY - 10, 40, 40 }; 
                     Vector2 centro = { 0, 0 };
                     
-                    // 3. Desenha a foto
                     DrawTexturePro(texPratos[i], origem, destino, centro, 0.0f, WHITE);
-                    
-                    // 4. Desenha o texto empurrado lá pro X = 370
+                  
                     DrawText(TextFormat("[%d] - %s", i + 1, cardapio[i]), 370, posY, 20, WHITE);
                 }
             }
@@ -506,9 +466,6 @@ int main(){
 
         EndTextureMode();
 
-        // ==============================================
-        // ESCALA DO CANVAS PARA A TELA CHEIA
-        // ==============================================
         BeginDrawing();
         ClearBackground(BLACK); 
         DrawTexturePro(
@@ -520,9 +477,6 @@ int main(){
         EndDrawing();
     }
 
-    // ==============================================
-    // LIMPEZA DA MEMÓRIA 
-    // ==============================================
     for(int i = 0; i < 5; i++) {
         UnloadTexture(texPratos[i]); 
     }

@@ -19,12 +19,9 @@ else
     # Comando para limpar arquivos no Linux
     RM_CMD = rm -f $(OBJS) $(TARGET)
 endif
-# =========================================================
 
-# Se o raylib.h estiver em uma pasta específica, adicione o caminho aqui (ex: -I./include)
 INCLUDES = -I.
 
-# Se o arquivo libraylib.a estiver em uma pasta específica, adicione o caminho aqui (ex: -L./lib)
 LIBRARIES = -L.
 
 # Flags de compilação (Avisos e Otimização)
