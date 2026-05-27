@@ -331,7 +331,7 @@ int main(){
             DrawText("TEMPO ESGOTADO!", 260, 180, 50, GOLD);
             DrawText("O expediente acabou!", 370, 250, 24, LIGHTGRAY);
             DrawText(TextFormat("Pontuação Final: %d", pontuacao), 330, 320, 32, WHITE);
-            DrawText("Clique ou Pressione ESPAÇO para voltar ao menu", 250, 460, 20, GRAY);
+            DrawText("Pressione ENTER para voltar ao menu", 250, 460, 20, GRAY);
         }
         else if (estadoAtual == ESTADO_JOGANDO) {
             DrawTexturePro(mapa, 
@@ -342,7 +342,7 @@ int main(){
             DrawText(TextFormat("Pontuacao: %d", pontuacao), 22, 22, 40, Fade(RED, 0.5f));
             DrawText(TextFormat("Pontuacao: %d", pontuacao), 20, 20, 40, RED);
             
-            // Cronômetro
+           
             int minutos = (int)tempoRestante / 60;
             int segundos = (int)tempoRestante % 60;
             Color corTempo = (tempoRestante <= 10.0f) ? RED : BLUE;
