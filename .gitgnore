@@ -1,3 +1,16 @@
-sabor_recife
+# Arquivos executáveis finais (gerados pela compilação)
+*.exe
+*.out
+*.app
+SaborRecife
+
+# Arquivos temporários de objetos
 *.o
-*.a
+*.obj
+*.gch
+
+# Pastas automáticas de IDEs (se você usa VS Code ou Visual Studio)
+.vscode/
+.vs/
+out/
+build/
